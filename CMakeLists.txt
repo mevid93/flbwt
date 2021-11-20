@@ -45,8 +45,6 @@ if (BUILD_TESTS)
   )
   FetchContent_MakeAvailable(googletest)
 
-  enable_testing()
-
   add_executable(runUnitTests ${TEST_SRC_FILES})
 
   # Standard linking to gtest stuff.
@@ -55,6 +53,7 @@ if (BUILD_TESTS)
   # Extra linking for the project.
   target_link_libraries(runUnitTests project1_lib)
 
+  enable_testing()
   include(GoogleTest)
   gtest_discover_tests(runUnitTests)
 
