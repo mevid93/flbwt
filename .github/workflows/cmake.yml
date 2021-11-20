@@ -22,7 +22,7 @@ jobs:
     - uses: actions/checkout@v2
     
     - name: Make directory for Google Test Framework
-      run: mkdir - p ${{github.workspace}}/external 
+      run: mkdir -p ${{github.workspace}}/external 
     
     - name: Clone Google Test Framework
       working-directory: ${{github.workspace}}/external
