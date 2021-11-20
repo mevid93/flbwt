@@ -35,14 +35,17 @@ add_library(project1_lib ${SRC_FILES})
 option(BUILD_TESTS "Build all tests." OFF) # Makes boolean 'test' available.
 
 if (BUILD_TESTS)
-  # This adds another subdirectory, which has 'project(gtest)'.
-  add_subdirectory(external/googletest)
+
+  # Google test framework
+  include(FetchContent)
+  FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG        release-1.11.0
+  )
+  FetchContent_MakeAvailable(googletest)
 
   enable_testing()
-
-  # Include the gtest library. gtest_SOURCE_DIR is available due to
-  # 'project(gtest)' above.
-  include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
   add_executable(runUnitTests ${TEST_SRC_FILES})
 
@@ -52,8 +55,7 @@ if (BUILD_TESTS)
   # Extra linking for the project.
   target_link_libraries(runUnitTests project1_lib)
 
-  # This is so you can do 'make test' to see all your tests run, instead of
-  # manually running the executable runUnitTests to see those specific tests.
-  add_test(UnitTests runUnitTests)
+  include(GoogleTest)
+  gtest_discover_tests(runUnitTests)
 
 endif()
