@@ -16,8 +16,6 @@ set(CMAKE_CXX_STANDARD 11)
 set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/include)
 include_directories(${COMMON_INCLUDES})
 file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
-file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
-
 
 #----------------------------------------------------------------------------
 # Define libraries and executables
@@ -45,16 +43,18 @@ if (BUILD_TESTS)
   )
   FetchContent_MakeAvailable(googletest)
 
-  add_executable(runUnitTests ${TEST_SRC_FILES})
+  enable_testing()
+
+  file(GLOB TEST_SRC_FILES ${PROJECT_SOURCE_DIR}/test/*.cpp)
+  add_executable(UnitTests ${TEST_SRC_FILES})
 
   # Standard linking to gtest stuff.
-  target_link_libraries(runUnitTests gtest gtest_main)
+  target_link_libraries(UnitTests gtest gtest_main)
 
   # Extra linking for the project.
-  target_link_libraries(runUnitTests project1_lib)
+  target_link_libraries(UnitTests project1_lib)
 
-  enable_testing()
   include(GoogleTest)
-  gtest_discover_tests(runUnitTests)
+  gtest_discover_tests(UnitTests)
 
 endif()
