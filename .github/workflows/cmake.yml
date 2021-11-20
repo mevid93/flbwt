@@ -26,7 +26,8 @@ jobs:
       run: mkdir -p ${{github.workspace}}/build
     
     - name: Move to build directory
-      working-directory: ${{github.workspace}}/build
+      # set the working directory
+      run: cd ${{github.workspace}}/build
     
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
