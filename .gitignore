@@ -33,3 +33,9 @@
 
 # Build directory
 build/
+
+# Visual Studio Code workspace
+*.code-workspace
+
+# Visual Studio Code cpp settings
+.vscode/
