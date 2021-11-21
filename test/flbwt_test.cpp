@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
 
-TEST(configuration_test, passing_test) {
+TEST(configuration_test, setup_works) {
     EXPECT_TRUE(true);
 }
