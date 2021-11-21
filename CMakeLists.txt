@@ -15,7 +15,7 @@ set(CMAKE_CXX_STANDARD 11)
 #----------------------------------------------------------------------------
 set(COMMON_INCLUDES ${PROJECT_SOURCE_DIR}/include)
 include_directories(${COMMON_INCLUDES})
-file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.cpp)
+file(GLOB SRC_FILES ${PROJECT_SOURCE_DIR}/src/*.c)
 
 #----------------------------------------------------------------------------
 # Define libraries and executables
