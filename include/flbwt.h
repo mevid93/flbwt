@@ -1,6 +1,10 @@
 #ifndef FLBWT_H
 #define FLBWT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 // API FOR THE USER
@@ -25,5 +29,9 @@ void bwt_file(const char *input_filename, const char *output_filename);
 uint8_t *bwt_string(uint8_t *T, uint64_t n);
 
 // API FOR THE GOOGLE TEST FRAMEWORK (USER SHOULD NOT CALL THIS)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
