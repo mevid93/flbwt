@@ -1,7 +1,6 @@
 #include <iostream>
-extern "C" {
-    #include "flbwt.h"
-}
+#include "flbwt.h"
+
 
 int main(int argc, char *argv[]) 
 {
