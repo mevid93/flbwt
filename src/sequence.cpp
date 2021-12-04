@@ -45,5 +45,5 @@ Sequence::~Sequence()
     /* free resources from lower stream */
     free(this->lower_stream);
     this->lower_stream = NULL;
-    this->lower_stream_length = NULL;
+    this->lower_stream_length = 0;
 }
