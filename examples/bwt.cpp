@@ -1,5 +1,5 @@
 #include <iostream>
-#include "flbwt.h"
+#include "flbwt.hpp"
 
 
 int main(int argc, char *argv[]) 

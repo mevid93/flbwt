@@ -1,7 +1,8 @@
-#include "flbwt.h"
-#include "utility.h"
-#include <stdio.h>
+#include <iostream>
 #include <stdlib.h>
+#include <string.h>
+#include "flbwt.hpp"
+#include "utility.hpp"
 
 // forward declarations
 uint8_t *bwt_is(const uint8_t *T, uint64_t n, uint8_t k);
@@ -15,21 +16,19 @@ void bwt_file(const char *input_filename, const char *output_filename)
 
     if (fp == NULL)
     {
-        perror("fopen() failed");
-        exit(EXIT_FAILURE);
+        throw std::invalid_argument("fopen failed(): Could not open input file");
     }
 
     fseek(fp, 0L, SEEK_END);
     n = ftell(fp);
     rewind(fp);
 
-    T = malloc((n + 1) * sizeof(uint8_t));
+    T = (uint8_t *)malloc((n + 1) * sizeof(uint8_t));
 
     if (!T)
     {
         fclose(fp);
-        perror("malloc() failed");
-        exit(EXIT_FAILURE);
+        throw std::runtime_error("T* malloc failed(): Could not allocate memory");
     }
 
     fread(T, 1, n, fp);
@@ -43,11 +42,10 @@ void bwt_file(const char *input_filename, const char *output_filename)
 
     if (fp == NULL)
     {
-        perror("fopen() failed");
-        exit(EXIT_FAILURE);
+        throw std::invalid_argument("fopen failed(): Could not open output file");
     }
 
-    fputs(B, fp);
+    fwrite(B, sizeof(uint8_t), n * sizeof(uint8_t), fp);
     fclose(fp);
 
     /* release resources */
@@ -60,8 +58,8 @@ uint8_t *bwt_string(const uint8_t *T, uint64_t n)
     /* check that input string is not null and n is greater than 0 */
     if (T == NULL || n <= 0)
     {
-        printf("bwt_string() failed: Invalid parameters");
-        exit(EXIT_FAILURE);
+        std::cout << "bwt_string() failed: Invalid parameters" << std::endl;
+        throw std::invalid_argument("bwt_string failed(): Invalid parameters");
     }
 
     /* calculate the size of the alphabet */
@@ -88,5 +86,7 @@ uint8_t *bwt_is(const uint8_t *T, uint64_t n, uint8_t k)
     // decode S* strings B1 into R'
 
     // calculate the final BWT by calling Induce(R')
-    return NULL;
+    uint8_t *B = (uint8_t *)malloc(n * sizeof(uint8_t));
+    memcpy(B, T, n);
+    return B;
 }
