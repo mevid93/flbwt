@@ -21,6 +21,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     
+    - name: Pull submodules
+      run: git submodule update --init --recursive
+    
     - name: Configure CMake
       run: cmake -S $GITHUB_WORKSPACE -B ${{runner.workspace}}/build -DBUILD_TESTS=ON
 
