@@ -21,11 +21,13 @@ public:
      * @brief Construct a new Sequence object.
      * 
      * @param n number of integers to be stored
+     * @param U upper limit for integers to be stored
      */
-    Sequence(const uint64_t n);
+    Sequence(const uint64_t n, const uint64_t U);
 
     /**
      * @brief Store integer value to sequence. O(1) time complexity.
+     * Each integer that is stored must be smaller than upper limit U.
      * 
      * @param index index of the value to be stored
      * @param value value to be stored
@@ -45,14 +47,14 @@ public:
      * 
      */
     ~Sequence();
-    uint8_t lbits;                                // how many bits of integer belong to lower stream
 
 private:
-    static const uint64_t U = 0xffffffffffffffff; // max number of integers
-    uint64_t n;                                   // number of integers that can be stored to sequence
-    uint8_t ubits;                                // how many bits of integer belong to upper stream
-    sdsl::select_support_mcl<1> *sls;             // auxiliary data type enabling O(1) get operations
-    bool select_support_enabled;                  // is select support
+    uint64_t U;                       // max number of integers
+    uint64_t n;                       // number of integers that can be stored to sequence
+    uint8_t ubits;                    // how many bits of integer belong to upper stream
+    uint8_t lbits;                    // how many bits of integer belong to lower stream
+    sdsl::select_support_mcl<1> *sls; // auxiliary data type enabling O(1) get operations
+    bool select_support_enabled;      // is select support
 
     /**
      * @brief Enable constant time O(1) operation by doing
