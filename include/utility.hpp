@@ -20,4 +20,12 @@ uint8_t calculate_alphabet_size(const uint8_t *T, const uint64_t n);
  */
 int log2_64(uint64_t value);
 
+/**
+ * @brief Get the position of most significant bit.
+ * 
+ * @param n value to be analyzed
+ * @return uint8_t bit position
+ */
+uint8_t position_of_msb(const uint64_t n);
+
 #endif

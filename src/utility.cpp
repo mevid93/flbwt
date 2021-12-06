@@ -40,3 +40,19 @@ int log2_64(uint64_t value)
     value |= value >> 32;
     return tab64[((uint64_t)((value - (value >> 1)) * 0x07EDD5E59A4E28C2)) >> 58];
 }
+
+uint8_t position_of_msb(const uint64_t n)
+{
+    uint8_t position = 0;
+
+    for (int i = 0; i < 64; i++)
+    {
+        uint8_t bset = n >> i & 1;
+
+        if (bset == 1) {
+            position = i;
+        }
+    }
+
+    return position + 1;
+}
