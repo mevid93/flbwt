@@ -12,10 +12,10 @@
 class Sequence
 {
 public:
-    sdsl::bit_vector *upper_stream;
-    uint64_t *lower_stream;
-    uint64_t upper_stream_length;
-    uint64_t lower_stream_length;
+    sdsl::bit_vector *upper_stream; // upper stream (stores upper lg(n) bits)
+    sdsl::bit_vector *lower_stream; // lower stream (stores lower lg(U/n) bits)
+    uint64_t upper_stream_length;   // length of the upper stream
+    uint64_t lower_stream_length;   // lenght of the lower stream
 
     /**
      * @brief Construct a new Sequence object.
@@ -45,6 +45,21 @@ public:
      * 
      */
     ~Sequence();
+    uint8_t lbits;                                // how many bits of integer belong to lower stream
+
+private:
+    static const uint64_t U = 0xffffffffffffffff; // max number of integers
+    uint64_t n;                                   // number of integers that can be stored to sequence
+    uint8_t ubits;                                // how many bits of integer belong to upper stream
+    sdsl::select_support_mcl<1> *sls;             // auxiliary data type enabling O(1) get operations
+    bool select_support_enabled;                  // is select support
+
+    /**
+     * @brief Enable constant time O(1) operation by doing
+     * O(n) time preprocessing.
+     * 
+     */
+    void enable_select_operation();
 };
 
 #endif
