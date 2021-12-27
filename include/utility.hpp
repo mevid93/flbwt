@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+namespace flbwt {
+
 /**
  * @brief Calculate the alphabet size of the input string.
  * 
@@ -27,5 +29,7 @@ int log2_64(uint64_t value);
  * @return uint8_t bit position
  */
 uint8_t position_of_msb(const uint64_t n);
+
+}
 
 #endif

@@ -5,7 +5,7 @@
 #include "sequence.hpp"
 #include "utility.hpp"
 
-Sequence::Sequence(const uint64_t n, const uint64_t U)
+flbwt::Sequence::Sequence(const uint64_t n, const uint64_t U)
 {
     /* check that values are ok */
     if (n == 0 || U <= n) {
@@ -18,7 +18,7 @@ Sequence::Sequence(const uint64_t n, const uint64_t U)
     this->upper_stream_length = us_bits;
 
     /* allocate memory for the lower stream */
-    uint64_t ls_bits = n * (log2_64(U / n + 1) + 1);
+    uint64_t ls_bits = n * (flbwt::log2_64(U / n + 1) + 1);
     this->lower_stream = new sdsl::bit_vector(ls_bits, 0);
     this->lower_stream_length = ls_bits;
 
@@ -29,9 +29,9 @@ Sequence::Sequence(const uint64_t n, const uint64_t U)
     this->U = U;
 
     /* calculate the number of bits considering each stream */
-    uint8_t log2result = log2_64(n);
+    uint8_t log2result = flbwt::log2_64(n);
 
-    uint8_t num_of_bits = position_of_msb(U);
+    uint8_t num_of_bits = flbwt::position_of_msb(U);
     this->ubits = log2result;
     this->lbits = num_of_bits - log2result;
 
@@ -39,7 +39,7 @@ Sequence::Sequence(const uint64_t n, const uint64_t U)
     this->sls = NULL;
 }
 
-void Sequence::store_integer(const uint64_t index, const uint64_t integer)
+void flbwt::Sequence::store_integer(const uint64_t index, const uint64_t integer)
 {
     this->select_support_enabled = false;
 
@@ -53,7 +53,7 @@ void Sequence::store_integer(const uint64_t index, const uint64_t integer)
     this->lower_stream->set_int(ls_index, integer, this->lbits);
 }
 
-uint64_t Sequence::get_integer(const uint64_t index)
+uint64_t flbwt::Sequence::get_integer(const uint64_t index)
 {
     if (!this->select_support_enabled)
     {
@@ -74,7 +74,7 @@ uint64_t Sequence::get_integer(const uint64_t index)
     return integer;
 }
 
-Sequence::~Sequence()
+flbwt::Sequence::~Sequence()
 {
     /* free resources from upper stream */
     delete this->upper_stream;
@@ -97,7 +97,7 @@ Sequence::~Sequence()
     this->select_support_enabled = false;
 }
 
-void Sequence::enable_select_operation()
+void flbwt::Sequence::enable_select_operation()
 {
     this->select_support_enabled = true;
 

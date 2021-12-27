@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
     }
 
     /* call the burrows-wheeler transform for the input file */
-    bwt_file(argv[1], argv[2]);
+    flbwt::bwt_file(argv[1], argv[2]);
 
     return 0;
 }

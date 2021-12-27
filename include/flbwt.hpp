@@ -2,6 +2,11 @@
 #define FLBWT_HPP
 
 #include <stdint.h>
+#include <unordered_map>
+#include "bucket.hpp"
+
+namespace flbwt
+{
 
 /**
  * @brief Function for performing Burrows-Wheeler Transform for 
@@ -26,19 +31,28 @@ uint8_t *bwt_string(const uint8_t *T, const uint64_t n);
 
 // REST OF THE FUNCTIONS ARE NOT MEANT FOR THE USER (ONLY FOR TESTING)
 
-typedef struct LMS_strings
-{
-    uint64_t count;
-} LMS_strings;
-
 /**
  * @brief Function for extracting S* substrings from the input string.
  * However, the last S* substring T(n) will be ignored.
  * 
  * @param T input string
  * @param n length of the input string
- * @return LMS_strings
+ * @param k alphabet size
+ * @return result map
  */
-LMS_strings *extract_LMS_strings(const uint8_t *T, const uint64_t n);
+std::unordered_map<uint8_t, flbwt::Bucket*> *extract_LMS_strings(const uint8_t *T, const uint64_t n, const uint8_t k);
+
+/**
+ * @brief Function for counting the number bits required to store S* substrings
+ * in each c-bucket. This function ignores the last S* substring T(n).
+ * 
+ * @param T input string
+ * @param n length of the input string
+ * @param k alphabet size
+ * @return bit counts
+ */
+uint64_t *count_bits_for_buckets(const uint8_t *T, const uint64_t n, const uint8_t k);
+
+}
 
 #endif
