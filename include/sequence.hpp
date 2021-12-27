@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <sdsl/bit_vectors.hpp>
 
+namespace flbwt {
+
 /**
  * @brief Data structure that stores a sequence of n integers 
  * such that 0 <= s1 < s2 < ... < sn < U in a bit stream
@@ -63,5 +65,7 @@ private:
      */
     void enable_select_operation();
 };
+
+}
 
 #endif

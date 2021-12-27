@@ -1,6 +1,6 @@
 #include "utility.hpp"
 
-uint8_t calculate_alphabet_size(const uint8_t *T, const uint64_t n)
+uint8_t flbwt::calculate_alphabet_size(const uint8_t *T, const uint64_t n)
 {
     uint8_t alphabet[256] = {0};
     uint8_t size = 0;
@@ -30,7 +30,7 @@ const int tab64[64] = {
     56, 45, 25, 31, 35, 16, 9, 12,
     44, 24, 15, 8, 23, 7, 6, 5};
 
-int log2_64(uint64_t value)
+int flbwt::log2_64(uint64_t value)
 {
     value |= value >> 1;
     value |= value >> 2;
@@ -41,7 +41,7 @@ int log2_64(uint64_t value)
     return tab64[((uint64_t)((value - (value >> 1)) * 0x07EDD5E59A4E28C2)) >> 58];
 }
 
-uint8_t position_of_msb(const uint64_t n)
+uint8_t flbwt::position_of_msb(const uint64_t n)
 {
     uint8_t position = 0;
 

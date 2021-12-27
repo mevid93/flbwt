@@ -5,7 +5,7 @@
 TEST(sequence_test, construct_sequence_1)
 {
     int n = 15;
-    std::unique_ptr<Sequence> sequence(new Sequence(n, 100));
+    std::unique_ptr<flbwt::Sequence> sequence(new flbwt::Sequence(n, 100));
     uint8_t EXPECTED_VALUE = 2 * n + 2;
     EXPECT_EQ(EXPECTED_VALUE, sequence->upper_stream_length);
 }
@@ -13,15 +13,15 @@ TEST(sequence_test, construct_sequence_1)
 TEST(sequence_test, construct_sequence_2)
 {
     int n = 1000;
-    std::unique_ptr<Sequence> sequence(new Sequence(n, 2000));
-    uint32_t EXPECTED_VALUE = n * (log2_64(2000 / n + 1) + 1);
+    std::unique_ptr<flbwt::Sequence> sequence(new flbwt::Sequence(n, 2000));
+    uint32_t EXPECTED_VALUE = n * (flbwt::log2_64(2000 / n + 1) + 1);
     EXPECT_EQ(EXPECTED_VALUE, sequence->lower_stream_length);
 }
 
 TEST(sequence_test, store_integer_1)
 {
     int n = 15;
-    std::unique_ptr<Sequence> sequence(new Sequence(n, 1600));
+    std::unique_ptr<flbwt::Sequence> sequence(new flbwt::Sequence(n, 1600));
     int index = 7;
     int value = 1584;
     sequence->store_integer(index, value);
@@ -33,7 +33,7 @@ TEST(sequence_test, store_integer_1)
 TEST(sequence_test, store_integer_2)
 {
     int n = 3;
-    std::unique_ptr<Sequence> sequence(new Sequence(n, 334));
+    std::unique_ptr<flbwt::Sequence> sequence(new flbwt::Sequence(n, 334));
     sequence->store_integer(3, 333);
     sequence->store_integer(1, 111);
     sequence->store_integer(2, 222);
@@ -49,7 +49,7 @@ TEST(sequence_test, store_integer_2)
 TEST(sequence_test, get_integer_1)
 {
     int n = 15;
-    std::unique_ptr<Sequence> sequence(new Sequence(n, 600));
+    std::unique_ptr<flbwt::Sequence> sequence(new flbwt::Sequence(n, 600));
     int index = 1;
     int value = 541;
     sequence->store_integer(index, value);
@@ -60,7 +60,7 @@ TEST(sequence_test, get_integer_1)
 TEST(sequence_test, get_integer_2)
 {
     int n = 10;
-    std::unique_ptr<Sequence> sequence(new Sequence(n, 0xffffffffffffffff));
+    std::unique_ptr<flbwt::Sequence> sequence(new flbwt::Sequence(n, 0xffffffffffffffff));
     sequence->store_integer(3, 333);
     sequence->store_integer(1, 111);
     sequence->store_integer(2, 222);
