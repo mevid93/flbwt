@@ -37,10 +37,10 @@ TEST(flbwt_test, extract_LMS_strings_1)
 {
     const uint8_t *T = (uint8_t *)"mmississiippii$";
     uint64_t n = 15;
-    std::unordered_map<uint8_t, flbwt::Bucket*> *bucket_map = flbwt::extract_LMS_strings(T, n, 5);
+    flbwt::BucketMap *bucket_map = flbwt::extract_LMS_strings(T, n, 5);
     uint8_t EXPECTED_COUNT = 1;
-    EXPECT_EQ(EXPECTED_COUNT, bucket_map->size());
-    EXPECT_EQ(3UL, (*bucket_map)['i']->strings);
+    EXPECT_EQ(EXPECTED_COUNT, bucket_map->getAllBuckets()->size());
+    EXPECT_EQ(3UL, (*bucket_map->getAllBuckets())['i']->strings);
     delete bucket_map;
 }
 
@@ -48,9 +48,9 @@ TEST(flbwt_test, extract_LMS_strings_2)
 {
     const uint8_t *T = (uint8_t *)"issasissssssssssssssssssssssssssssssssssssssssssssssssssssssssss$";
     uint64_t n = 66;
-    std::unordered_map<uint8_t, flbwt::Bucket*> *bucket_map = flbwt::extract_LMS_strings(T, n, 4);
+    flbwt::BucketMap *bucket_map = flbwt::extract_LMS_strings(T, n, 4);
     uint8_t EXPECTED_COUNT = 2;
-    EXPECT_EQ(EXPECTED_COUNT, bucket_map->size());
-    EXPECT_EQ(1UL, (*bucket_map)['a']->strings);
+    EXPECT_EQ(EXPECTED_COUNT, bucket_map->getAllBuckets()->size());
+    EXPECT_EQ(1UL, (*bucket_map->getAllBuckets())['a']->strings);
     delete bucket_map;
 }

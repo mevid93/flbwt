@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <unordered_map>
 #include "bucket.hpp"
+#include "bucket_map.hpp"
 
 namespace flbwt
 {
@@ -38,9 +39,9 @@ uint8_t *bwt_string(const uint8_t *T, const uint64_t n);
  * @param T input string
  * @param n length of the input string
  * @param k alphabet size
- * @return result map
+ * @return BucketMap
  */
-std::unordered_map<uint8_t, flbwt::Bucket*> *extract_LMS_strings(const uint8_t *T, const uint64_t n, const uint8_t k);
+flbwt::BucketMap *extract_LMS_strings(const uint8_t *T, const uint64_t n, const uint8_t k);
 
 /**
  * @brief Function for counting the number bits required to store S* substrings

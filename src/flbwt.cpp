@@ -6,18 +6,7 @@
 #include "sequence.hpp"
 
 // algorithm 1 from the research paper (modified induced sorting)
-uint8_t *bwt_is(const uint8_t *T, uint64_t n, uint8_t k);
-
-// helper function for releasing the memory of unordered_map containing bucket elements
-void delete_unordered_map_of_buckets(std::unordered_map<uint8_t, flbwt::Bucket *> *bucket_map)
-{
-    for (std::unordered_map<uint8_t, flbwt::Bucket *>::iterator it = bucket_map->begin(); it != bucket_map->end(); it++)
-    {
-        delete it->second;
-    }
-
-    delete bucket_map;
-}
+uint8_t *bwt_is(const uint8_t *T, uint64_t n, uint8_t k); 
 
 void flbwt::bwt_file(const char *input_filename, const char *output_filename)
 {
@@ -88,19 +77,13 @@ uint8_t *flbwt::bwt_string(const uint8_t *T, const uint64_t n)
 uint8_t *bwt_is(const uint8_t *T, const uint64_t n, const uint8_t k)
 {
     // decompose the input string into S* substrings
-    std::unordered_map<uint8_t, flbwt::Bucket *> *bucket_map = flbwt::extract_LMS_strings(T, n, k);
-
-    uint64_t num_of_substrings = 0;
-    for (std::unordered_map<uint8_t, flbwt::Bucket *>::iterator it = bucket_map->begin(); it != bucket_map->end(); it++)
-    {
-        num_of_substrings += it->second->strings;
-    }
+    flbwt::BucketMap *bucket_map = flbwt::extract_LMS_strings(T, n, k);
 
     // TODO: store the qi value of each S* substring to lemma 1 data structure
-    std::cout << "Number of S* substrings found: " << num_of_substrings << std::endl;
-    flbwt::Sequence *sequence = new flbwt::Sequence(num_of_substrings, n * 255 + n);
+    std::cout << "Number of S* substrings found: " << bucket_map->getTotalNumberOfSubstrings() << std::endl;
+    flbwt::Sequence *sequence = new flbwt::Sequence(bucket_map->getTotalNumberOfSubstrings(), n * 255 + n);
     delete sequence;
-    delete_unordered_map_of_buckets(bucket_map);
+    delete bucket_map;
 
     // sort the S*substrings
 
@@ -122,31 +105,23 @@ uint8_t *bwt_is(const uint8_t *T, const uint64_t n, const uint8_t k)
 #define TYPE_L 1
 #define TYPE_S 0
 
-std::unordered_map<uint8_t, flbwt::Bucket *> *flbwt::extract_LMS_strings(const uint8_t *T, const uint64_t n, const uint8_t k)
+flbwt::BucketMap *flbwt::extract_LMS_strings(const uint8_t *T, const uint64_t n, const uint8_t k)
 {
-    /* initialize result variable */
-    std::unordered_map<uint8_t, flbwt::Bucket *> *bucket_map = new std::unordered_map<uint8_t, flbwt::Bucket *>();
-
-    /* if T is trivial, then return the result immediately */
-    if (n <= 2)
-    {
-        return bucket_map;
-    }
-
     /* 
     Count the number of bits required to store each S* substring
     to their corresponding c-bucket. After that initialize the buckets.
     */
     uint64_t *counts = flbwt::count_bits_for_buckets(T, n, k);
 
-    for (uint16_t i = 0; i < 256; i++)
+    /* initialize bucket map with the bit counts */
+    flbwt::BucketMap *bucket_map = new flbwt::BucketMap(counts);
+    delete[] counts;
+
+    /* if T is trivial, then return the result immediately */
+    if (n <= 2)
     {
-        if (counts[i] != 0)
-        {
-            bucket_map->insert({i, new flbwt::Bucket(i, counts[i])});
-        }
+        return bucket_map;
     }
-    delete counts;
 
     /* 
     The first S* substring is at location T[n] but it is ignored here.
@@ -174,7 +149,7 @@ std::unordered_map<uint8_t, flbwt::Bucket *> *flbwt::extract_LMS_strings(const u
                 p = i + 1;
 
                 // save the S* substrings into buckets
-                (*bucket_map)[T[p]]->insert_substring(T, n, k, p, q - p + 1);
+                bucket_map->insert_substring(T, n, k, p, q - p + 1);
 
                 q = p;
             }
