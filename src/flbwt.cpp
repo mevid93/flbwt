@@ -1,12 +1,10 @@
 #include <iostream>
 #include <stdlib.h>
-#include <string.h>
 #include "flbwt.hpp"
 #include "utility.hpp"
-#include "sequence.hpp"
 
 // algorithm 1 from the research paper (modified induced sorting)
-uint8_t *bwt_is(const uint8_t *T, uint64_t n, uint8_t k); 
+uint8_t *bwt_is(const uint8_t *T, const uint64_t n, const uint8_t k);
 
 void flbwt::bwt_file(const char *input_filename, const char *output_filename)
 {
@@ -77,13 +75,11 @@ uint8_t *flbwt::bwt_string(const uint8_t *T, const uint64_t n)
 uint8_t *bwt_is(const uint8_t *T, const uint64_t n, const uint8_t k)
 {
     // decompose the input string into S* substrings
-    flbwt::BucketMap *bucket_map = flbwt::extract_LMS_strings(T, n, k);
+    flbwt::Container *container = flbwt::extract_LMS_strings(T, n, k);
 
-    // TODO: store the qi value of each S* substring to lemma 1 data structure
-    std::cout << "Number of S* substrings found: " << bucket_map->getTotalNumberOfSubstrings() << std::endl;
-    flbwt::Sequence *sequence = new flbwt::Sequence(bucket_map->getTotalNumberOfSubstrings(), n * 255 + n);
-    delete sequence;
-    delete bucket_map;
+    std::cout << "Number of S* substrings found: " << container->num_of_substrings << std::endl;
+    std::cout << "Number of unique S* substrings found: " << container->num_of_unique_substrings << std::endl;
+    delete container;
 
     // sort the S*substrings
 
@@ -105,23 +101,19 @@ uint8_t *bwt_is(const uint8_t *T, const uint64_t n, const uint8_t k)
 #define TYPE_L 1
 #define TYPE_S 0
 
-flbwt::BucketMap *flbwt::extract_LMS_strings(const uint8_t *T, const uint64_t n, const uint8_t k)
+flbwt::Container *flbwt::extract_LMS_strings(const uint8_t *T, const uint64_t n, const uint8_t k)
 {
-    /* 
-    Count the number of bits required to store each S* substring
-    to their corresponding c-bucket. After that initialize the buckets.
-    */
-    uint64_t *counts = flbwt::count_bits_for_buckets(T, n, k);
-
-    /* initialize bucket map with the bit counts */
-    flbwt::BucketMap *bucket_map = new flbwt::BucketMap(counts);
-    delete[] counts;
+    /* Initialize the result data structure */
+    flbwt::Container *container = new Container();
+    container->n = n;
+    container->k = k;
 
     /* if T is trivial, then return the result immediately */
     if (n <= 2)
-    {
-        return bucket_map;
-    }
+        return container;
+
+    /* initialize hash table where unique substrings are stored */
+    container->hashtable = new HashTable(67777, n, k);
 
     /* 
     The first S* substring is at location T[n] but it is ignored here.
@@ -130,10 +122,10 @@ flbwt::BucketMap *flbwt::extract_LMS_strings(const uint8_t *T, const uint64_t n,
     */
     int previous_type = TYPE_L; // type of the previous character
     uint64_t p;                 // starting position of S* substring
-    uint64_t q = n;             // ending position of S* substring
+    uint64_t q = n - 1;         // ending position of S* substring
 
     /* scan the input string from right to left and save the S* substrings */
-    for (int i = n - 2; i >= 0; i--)
+    for (uint64_t i = n - 2; i >= 0; i--)
     {
         // check if character is TYPE_S
         if (T[i] < T[i + 1])
@@ -148,83 +140,23 @@ flbwt::BucketMap *flbwt::extract_LMS_strings(const uint8_t *T, const uint64_t n,
             {
                 p = i + 1;
 
-                // save the S* substrings into buckets
-                bucket_map->insert_substring(T, n, k, p, q - p + 1);
+                container->num_of_substrings++;
+                container->c_substr_counts[T[p]]++;
+
+                // insert unique substrings into hashtable
+                if(container->hashtable->insert_string(T, q - p + 1, p))
+                    container->num_of_unique_substrings++;
 
                 q = p;
             }
 
             previous_type = TYPE_L;
         }
+
+        if (i == 0)
+            break; // to prevent integer underflow
     }
 
     /* all done, return the results */
-    return bucket_map;
-}
-
-uint64_t *flbwt::count_bits_for_buckets(const uint8_t *T, const uint64_t n, const uint8_t k)
-{
-    /* array to hold number of substrings starting with character c */
-    uint64_t *counts = new uint64_t[256];
-    std::fill_n(counts, 256, 0);
-
-    /* if T is trivial, then return the result immediately */
-    if (n == 2)
-    {
-        return counts;
-    }
-
-    /* 
-    The first S* substring is at location T[n] but it is ignored here.
-    The next to last character is always of TYPE_L.
-    Each S* substring in T can be denoted as T[p...q].
-    */
-    int previous_type = TYPE_L; // type of the previous character
-    uint64_t p;                 // starting position of S* substring
-    uint64_t q = n;             // ending position of S* substring
-    uint64_t LSI_BITS;          // number of bits required to store long substring index
-    uint64_t LSL_BITS;          // number of bits required to store long substring length
-    uint64_t SS_LIMIT;          // small substring length limit
-    uint64_t SS_BITS;           // number of bits requires to store small substring length
-
-    LSI_BITS = flbwt::position_of_msb(n);
-    LSL_BITS = LSI_BITS;
-    SS_LIMIT = flbwt::log2_64(n) / flbwt::log2_64(k);
-    SS_BITS = flbwt::position_of_msb(SS_LIMIT);
-
-    /* scan the input string from right to left and save the S* substrings */
-    for (int i = n - 2; i >= 0; i--)
-    {
-        // check if character is TYPE_S
-        if (T[i] < T[i + 1])
-        {
-            previous_type = TYPE_S;
-        }
-        // check if character is TYPE_L
-        else if (T[i] > T[i + 1])
-        {
-            // if previous character was TYPE_S, then new S* substring was found
-            if (previous_type == TYPE_S)
-            {
-                p = i + 1;
-
-                // increase the corresponding c-bucket bit count
-                if (q - p + 1 <= SS_LIMIT)
-                {
-                    counts[T[p]] += 1 + SS_BITS + (q - p + 1) * 8;
-                }
-                else
-                {
-                    counts[T[p]] += 1 + LSI_BITS + LSL_BITS;
-                }
-
-                q = p;
-            }
-
-            previous_type = TYPE_L;
-        }
-    }
-
-    /* all done, return the results */
-    return counts;
+    return container;
 }

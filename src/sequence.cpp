@@ -18,7 +18,7 @@ flbwt::Sequence::Sequence(const uint64_t n, const uint64_t U)
     this->upper_stream_length = us_bits;
 
     /* allocate memory for the lower stream */
-    uint64_t ls_bits = n * (flbwt::log2_64(U / n + 1) + 1);
+    uint64_t ls_bits = n * (flbwt::log2_64(U / n + 1) + 2);
     this->lower_stream = new sdsl::bit_vector(ls_bits, 0);
     this->lower_stream_length = ls_bits;
 
