@@ -77,14 +77,17 @@ uint8_t *bwt_is(const uint8_t *T, const uint64_t n, const uint8_t k)
     // decompose the input string into S* substrings
     flbwt::Container *container = flbwt::extract_LMS_strings(T, n, k);
 
+    // sort the S*substrings and name them
+    uint64_t *s = flbwt::sort_LMS_strings(T, container, container->num_of_unique_substrings);
+
+    // get new shortened string T1
+
     std::cout << "Number of S* substrings found: " << container->num_of_substrings << std::endl;
     std::cout << "Number of unique S* substrings found: " << container->num_of_unique_substrings << std::endl;
+    std::cout << "Head string end: " << container->head_string_end << std::endl;
+
     delete container;
-
-    // sort the S*substrings
-
-    // name S* substrings by using the result of Induce(R)
-    // to get new shortened string T1
+    delete[] s;
 
     // if each character in T1 is unique then directly
     // compute B1 from T1
@@ -144,7 +147,7 @@ flbwt::Container *flbwt::extract_LMS_strings(const uint8_t *T, const uint64_t n,
                 container->c_substr_counts[T[p]]++;
 
                 // insert unique substrings into hashtable
-                if(container->hashtable->insert_string(T, q - p + 1, p))
+                if (container->hashtable->insert_string(T, q - p + 1, p))
                     container->num_of_unique_substrings++;
 
                 q = p;
@@ -157,6 +160,129 @@ flbwt::Container *flbwt::extract_LMS_strings(const uint8_t *T, const uint64_t n,
             break; // to prevent integer underflow
     }
 
+    // save the ending position of head strign
+    container->head_string_end = p;
+
     /* all done, return the results */
     return container;
+}
+
+uint64_t *flbwt::sort_LMS_strings(const uint8_t *T, flbwt::Container *container, const uint64_t n)
+{
+    // array s will hold hashtable positions of sorted S* substrings
+    uint64_t *s = new uint64_t[n + 2];
+
+    uint64_t p, i, j, l, m;
+
+    j = 1; // j == 0 is for the head string T[0..p]
+    for (i = 0; i < container->hashtable->HTSIZE; i++)
+    {
+        p = container->hashtable->head[i];
+        while (p != 0)
+        {
+            l = container->hashtable->get_length(p);
+            if (l == 0) // last string for hashtable index
+                break;
+            if (l == 1) // get position of the next element
+            {
+                p = container->hashtable->get_pointer(p);
+                continue;
+            }
+            s[j++] = p;
+            p = container->hashtable->skip_string(p);
+        }
+    }
+
+    m = j - 1;
+
+    // sort the substrings by using quick sort
+    auto LMS_comparison = [T, container](uint64_t index_1, uint64_t index_2)
+    {
+        uint64_t l1 = container->hashtable->get_length(index_1);
+        uint64_t l2 = container->hashtable->get_length(index_2);
+        int c1, c2;
+
+        uint64_t n = 0;
+        while (l1 > 0 && l2 > 0)
+        {
+            // get next characters
+            c1 = container->hashtable->get_nth_character(T, index_1, n);
+            c2 = container->hashtable->get_nth_character(T, index_2, n);
+            n++;
+
+            if (c1 != c2)
+                break;
+            l1--;
+            l2--;
+        }
+
+        if (l1 == 0)
+            return true;
+        if (l2 == 0)
+            return false;
+        return c1 - c2 < 0;
+    };
+
+    std::sort(s + 1, s + 1 + m, LMS_comparison);
+    
+    // assign the names for the substrings (fill them to hashtable)
+    for (i = 1; i <= m; i++)
+    {
+        p = s[i];
+        container->hashtable->set_name(p, i);
+    }
+
+    // add the head substring T[0..p] and last S* substring T[n] --> needed for BWT
+    uint64_t bufsize = container->hashtable->buf->bit_size();
+    container->hashtable->buf->bit_resize(bufsize + 300);   // 300 bits plenty enough to store two substrings
+    l = container->head_string_end + 1;
+    uint64_t pos = bufsize;
+
+    // add the head string
+    if (l <= container->hashtable->SS_LIMIT)
+    {
+        s[container->num_of_unique_substrings + 1] = pos;
+        container->hashtable->buf->set_int(pos, T[0] + 1, container->hashtable->SW_BITS);
+        pos += container->hashtable->SW_BITS;
+        (*container->hashtable->buf)[pos] = 0;
+        pos += 1;
+        container->hashtable->buf->set_int(pos, l, container->hashtable->SS_BITS);
+        pos += container->hashtable->SS_BITS;
+        for (i = 0; i < l; i++)
+        {
+            container->hashtable->buf->set_int(pos, T[0 + i], 8);
+            pos += 8;
+        }
+        container->hashtable->buf->set_int(pos, container->num_of_unique_substrings + 1, container->hashtable->NAME_BITS);
+        pos += container->hashtable->NAME_BITS;
+    }
+    else
+    {
+        s[container->num_of_unique_substrings + 1] = pos;
+        container->hashtable->buf->set_int(pos, T[0] + 1, container->hashtable->SW_BITS);
+        pos += container->hashtable->SW_BITS;
+        (*container->hashtable->buf)[pos] = 1;
+        pos += 1;
+        container->hashtable->buf->set_int(pos, 0, container->hashtable->LSI_BITS);
+        pos += container->hashtable->LSI_BITS;
+        container->hashtable->buf->set_int(pos, l, container->hashtable->LSL_BITS);
+        pos += container->hashtable->LSL_BITS;
+        container->hashtable->buf->set_int(pos, container->num_of_unique_substrings + 1, container->hashtable->NAME_BITS);
+        pos += container->hashtable->NAME_BITS;
+    }
+
+    // add the last S* substring
+    s[0] = pos;
+    pos += container->hashtable->SW_BITS;
+    (*container->hashtable->buf)[pos] = 0;
+    pos += 1;
+    container->hashtable->buf->set_int(pos, 1, container->hashtable->SS_BITS);
+    pos += container->hashtable->SS_BITS;
+    container->hashtable->buf->set_int(pos, 0, 8);
+    pos += 8;
+    container->hashtable->buf->set_int(pos, 0, container->hashtable->NAME_BITS);
+    pos += container->hashtable->NAME_BITS;
+    container->hashtable->buf->set_int(pos, 0, 64); // reset the following bits
+
+    return s;
 }

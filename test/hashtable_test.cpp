@@ -171,3 +171,29 @@ TEST(hashtable_test, resize_1)
     EXPECT_EQ(792U, hashtable->buf->bit_size());
     delete hashtable;
 }
+
+TEST(hashtable_test, get_name_1)
+{
+    const uint64_t n = 1000;
+    const uint8_t k = 6;
+    flbwt::HashTable *hashtable = new flbwt::HashTable(100, n, k);
+    hashtable->buf->bit_resize(100);
+    (*hashtable->buf)[8] = 1;
+    hashtable->buf->set_int(8 + 1 + hashtable->LSI_BITS + hashtable->LSL_BITS, 42, hashtable->NAME_BITS);
+    uint64_t name = hashtable->get_name(0);
+    EXPECT_EQ(42U, name);
+    delete hashtable;
+}
+
+TEST(hashtable_test, set_name_1)
+{
+    const uint64_t n = 1000;
+    const uint8_t k = 6;
+    flbwt::HashTable *hashtable = new flbwt::HashTable(100, n, k);
+    hashtable->buf->bit_resize(100);
+    (*hashtable->buf)[8] = 0;
+    hashtable->set_name(0, 44);
+    uint64_t name = hashtable->get_name(0);
+    EXPECT_EQ(44U, name);
+    delete hashtable;
+}

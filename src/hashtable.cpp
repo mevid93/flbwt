@@ -210,6 +210,40 @@ void flbwt::HashTable::set_position(uint64_t idx, uint64_t p)
     this->buf->set_int(idx + this->SW_BITS + 1, p, this->LSI_BITS);
 }
 
+void flbwt::HashTable::set_name(uint64_t idx, uint64_t p)
+{
+    if ((*this->buf)[idx + this->SW_BITS] == 0)
+    {
+        uint8_t m = this->get_length(idx);
+        this->buf->set_int(idx + this->SW_BITS + 1 + this->SS_BITS + 8 * m, p, this->NAME_BITS);
+        return;
+    }
+
+    this->buf->set_int(idx + this->SW_BITS + 1 + this->LSI_BITS + this->LSL_BITS, p, this->NAME_BITS);
+}
+
+uint64_t flbwt::HashTable::get_name(uint64_t idx)
+{
+    if ((*this->buf)[idx + this->SW_BITS] == 0)
+    {
+        uint8_t m = this->get_length(idx);
+        return this->buf->get_int(idx + this->SW_BITS + 1 + this->SS_BITS + 8 * m, this->NAME_BITS);
+    }
+
+    return this->buf->get_int(idx + this->SW_BITS + 1 + this->LSI_BITS + this->LSL_BITS, this->NAME_BITS);
+}
+
+uint8_t flbwt::HashTable::get_nth_character(const uint8_t *T, uint64_t idx, uint64_t n)
+{
+    if ((*this->buf)[idx + this->SW_BITS] == 0)
+    {
+        return this->buf->get_int(idx + this->SW_BITS + 1 + this->SS_BITS + n * 8, 8);
+    }
+
+    uint64_t p = this->get_position(idx);
+    return T[p + n];
+}
+
 flbwt::HashTable::~HashTable()
 {
     delete[] this->rest;

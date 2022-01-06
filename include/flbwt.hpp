@@ -42,14 +42,13 @@ uint8_t *bwt_string(const uint8_t *T, const uint64_t n);
 flbwt::Container *extract_LMS_strings(const uint8_t *T, const uint64_t n, const uint8_t k);
 
 /**
- * @brief Function for counting the number bits required to store S* substrings
- * in each c-bucket. This function ignores the last S* substring T(n).
+ * @brief Function for sorting LMS substrings. 
  * 
  * @param T input string
- * @param container container object
- * @return bit counts
+ * @param container container where substrings are stored
+ * @param n number of LMS substrings to be sorted
  */
-uint64_t *count_bits_for_buckets(const uint8_t *T, Container *container);
+uint64_t *sort_LMS_strings(const uint8_t *T, flbwt::Container *container, const uint64_t n);
 
 }
 

@@ -9,6 +9,7 @@ TEST(flbwt_test, extract_LMS_strings_1)
     flbwt::Container *container = flbwt::extract_LMS_strings(T, n, k);
     EXPECT_EQ(3U, container->num_of_substrings);
     EXPECT_EQ(2U, container->num_of_unique_substrings);
+    EXPECT_EQ(2U, container->head_string_end);
     delete container;
 }
 

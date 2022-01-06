@@ -102,6 +102,21 @@ public:
     uint64_t get_position(uint64_t idx);
 
     /**
+     * @brief Set the name of substrings at position idx.
+     */
+    void set_name(uint64_t idx, uint64_t name);
+
+    /**
+     * @brief Get the name of substrings at position idx.
+     */
+    uint64_t get_name(uint64_t idx);
+
+    /**
+     * @brief Get the nth character from substring at position idx.
+     */
+    uint8_t get_nth_character(const uint8_t *T, uint64_t idx, uint64_t n);
+
+    /**
      * @brief Destroy the HashTable object.
      */
     ~HashTable();
