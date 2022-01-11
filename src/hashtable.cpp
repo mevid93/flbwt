@@ -244,6 +244,69 @@ uint8_t flbwt::HashTable::get_nth_character(const uint8_t *T, uint64_t idx, uint
     return T[p + n];
 }
 
+uint64_t flbwt::HashTable::find_name(const uint8_t *T, uint64_t m, uint64_t p)
+{
+    uint64_t i;                              // index of the substring
+    uint64_t pp;                             // previous substring starting index
+    uint64_t l;                              // length of substring under comparison
+    bool short_string = m <= this->SS_LIMIT; // determine type of the string
+
+    // start by calculating the hash
+    uint64_t h = this->hash_function(T, m, p);
+
+    // If a string with same hash exists, keep scanning until
+    // free position is reached, or duplicate is detected.
+    uint64_t q = this->head[h];
+    while (q != 0)
+    {
+        pp = q;
+        l = this->get_length(q);
+
+        if (l == 0)
+            break; // no more strings found
+
+        if (l == 1) // end of block --> continue from next point
+        {
+            q = this->get_pointer(q);
+            continue;
+        }
+
+        if (l != m) // not the same string if length differs
+        {
+            q = this->skip_string(q);
+            continue;
+        }
+
+        if (l <= this->SS_LIMIT)
+        {
+            // compare the substring (to be insterted) with the short substring of length l
+            for (i = 0U; i < m; i++)
+            {
+                if (T[p + i] != this->buf->get_int(q + this->SW_BITS + 1 + this->SS_BITS + i * 8, 8))
+                    break;
+            }
+        }
+        else
+        {
+            uint64_t p2 = this->get_position(q);
+
+            // compare the substring (to be insterted) with the long substring of length l
+            for (i = 0U; i < m; i++)
+            {
+                if (T[p + i] != T[p2 + i])
+                    break;
+            }
+        }
+
+        if (i == m) // match
+            return this->get_name(q);
+
+        q = this->skip_string(q);
+    }
+
+    throw std::runtime_error("hashtable->find_name() failed: Substring was not found");
+}
+
 flbwt::HashTable::~HashTable()
 {
     delete[] this->rest;
