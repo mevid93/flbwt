@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "container.hpp"
+#include "packed_array.hpp"
 
 namespace flbwt
 {
@@ -46,9 +47,13 @@ flbwt::Container *extract_LMS_strings(const uint8_t *T, const uint64_t n, const 
  * 
  * @param T input string
  * @param container container where substrings are stored
- * @param n number of LMS substrings to be sorted
  */
-uint64_t *sort_LMS_strings(const uint8_t *T, flbwt::Container *container, const uint64_t n);
+uint64_t *sort_LMS_strings(const uint8_t *T, flbwt::Container *container);
+
+/**
+ * @brief Create a shortened string T1.
+ */
+flbwt::PackedArray *create_shortened_string(const uint8_t *T, const uint64_t n, flbwt::Container *container);
 
 }
 

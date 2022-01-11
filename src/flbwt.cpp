@@ -6,6 +6,9 @@
 // algorithm 1 from the research paper (modified induced sorting)
 uint8_t *bwt_is(const uint8_t *T, const uint64_t n, const uint8_t k);
 
+// allocate memory for the suffix array
+flbwt::PackedArray *create_empty_suffix_array(flbwt::Container *container);
+
 void flbwt::bwt_file(const char *input_filename, const char *output_filename)
 {
     /* read content from the input file */
@@ -78,25 +81,28 @@ uint8_t *bwt_is(const uint8_t *T, const uint64_t n, const uint8_t k)
     flbwt::Container *container = flbwt::extract_LMS_strings(T, n, k);
 
     // sort the S*substrings and name them
-    uint64_t *s = flbwt::sort_LMS_strings(T, container, container->num_of_unique_substrings);
+    uint64_t *S = flbwt::sort_LMS_strings(T, container);
 
     // get new shortened string T1
+    flbwt::PackedArray *T1 = flbwt::create_shortened_string(T, n, container);
+
+    // create a suffix array for T1
+    flbwt::PackedArray *SA = create_empty_suffix_array(container);
+
+    // sort suffixes using induced sorting (SAIS)
+
+    // create BWT for T1
+
+    // create BWT for the original input string T
 
     std::cout << "Number of S* substrings found: " << container->num_of_substrings << std::endl;
     std::cout << "Number of unique S* substrings found: " << container->num_of_unique_substrings << std::endl;
     std::cout << "Head string end: " << container->head_string_end << std::endl;
 
     delete container;
-    delete[] s;
-
-    // if each character in T1 is unique then directly
-    // compute B1 from T1
-
-    // else do the recursive call with shortened string T1
-
-    // decode S* strings B1 into R'
-
-    // calculate the final BWT by calling Induce(R')
+    delete[] S;
+    delete T1;
+    delete SA;
 
     return NULL;
 }
@@ -167,10 +173,10 @@ flbwt::Container *flbwt::extract_LMS_strings(const uint8_t *T, const uint64_t n,
     return container;
 }
 
-uint64_t *flbwt::sort_LMS_strings(const uint8_t *T, flbwt::Container *container, const uint64_t n)
+uint64_t *flbwt::sort_LMS_strings(const uint8_t *T, flbwt::Container *container)
 {
     // array s will hold hashtable positions of sorted S* substrings
-    uint64_t *s = new uint64_t[n + 2];
+    uint64_t *s = new uint64_t[container->num_of_unique_substrings + 2];
 
     uint64_t p, i, j, l, m;
 
@@ -224,7 +230,7 @@ uint64_t *flbwt::sort_LMS_strings(const uint8_t *T, flbwt::Container *container,
     };
 
     std::sort(s + 1, s + 1 + m, LMS_comparison);
-    
+
     // assign the names for the substrings (fill them to hashtable)
     for (i = 1; i <= m; i++)
     {
@@ -234,7 +240,7 @@ uint64_t *flbwt::sort_LMS_strings(const uint8_t *T, flbwt::Container *container,
 
     // add the head substring T[0..p] and last S* substring T[n] --> needed for BWT
     uint64_t bufsize = container->hashtable->buf->bit_size();
-    container->hashtable->buf->bit_resize(bufsize + 300);   // 300 bits plenty enough to store two substrings
+    container->hashtable->buf->bit_resize(bufsize + 300); // 300 bits plenty enough to store two substrings
     l = container->head_string_end + 1;
     uint64_t pos = bufsize;
 
@@ -285,4 +291,76 @@ uint64_t *flbwt::sort_LMS_strings(const uint8_t *T, flbwt::Container *container,
     container->hashtable->buf->set_int(pos, 0, 64); // reset the following bits
 
     return s;
+}
+
+flbwt::PackedArray *flbwt::create_shortened_string(const uint8_t *T, const uint64_t n, flbwt::Container *container)
+{
+    // define how many substrings there is in total
+    uint64_t total_substring_count = container->num_of_substrings + 2;
+
+    // maximum name of any substring
+    uint64_t max_name = container->num_of_unique_substrings + 1;
+    // number of bits required to store a name
+    uint8_t bits_for_name = flbwt::position_of_msb(max_name);
+    flbwt::PackedArray *T1 = new PackedArray(total_substring_count, bits_for_name);
+
+    int previous_type = TYPE_L; // type of the previous character
+    uint64_t p;                 // starting position of S* substring
+    uint64_t q = n - 1;         // ending position of S* substring
+
+    uint64_t j = total_substring_count - 1;
+    T1->pa_set(j--, 0);
+
+    /* scan the input string from right to left and save the S* substrings */
+    for (uint64_t i = n - 2; i >= 0; i--)
+    {
+        // check if character is TYPE_S
+        if (T[i] < T[i + 1])
+        {
+            previous_type = TYPE_S;
+        }
+        // check if character is TYPE_L
+        else if (T[i] > T[i + 1])
+        {
+            // if previous character was TYPE_S, then new S* substring was found
+            if (previous_type == TYPE_S)
+            {
+                p = i + 1;
+
+                // find name of the substring
+                uint64_t name = container->hashtable->find_name(T, q - p + 1, p);
+
+                // insert name to T1
+                T1->pa_set(j--, name);
+
+                q = p;
+            }
+
+            previous_type = TYPE_L;
+        }
+
+        if (i == 0)
+            break; // to prevent integer underflow
+    }
+
+    T1->pa_set(0, max_name);
+
+    return T1;
+}
+
+flbwt::PackedArray *create_empty_suffix_array(flbwt::Container *container)
+{
+    // define how many substrings there is in total
+    uint64_t total_substring_count = container->num_of_substrings + 2;
+
+    // maximum name of any substring
+    uint64_t max_name = container->num_of_unique_substrings + 1;
+
+    // number of bits required to store a name
+    uint8_t bits_for_name = flbwt::position_of_msb(max_name);
+
+    // create suffix array and return it
+    flbwt::PackedArray *T1 = new flbwt::PackedArray(total_substring_count, bits_for_name);
+
+    return T1;
 }

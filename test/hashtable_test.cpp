@@ -197,3 +197,23 @@ TEST(hashtable_test, set_name_1)
     EXPECT_EQ(44U, name);
     delete hashtable;
 }
+
+TEST(hashtable_test, find_name_1)
+{
+    const uint8_t *T = (uint8_t *)"mmississiippii$";
+    const uint64_t n = 15;
+    const uint8_t k = 5;
+    flbwt::HashTable *hashtable = new flbwt::HashTable(100, n, k);
+    hashtable->insert_string(T, 4, 2);
+    uint64_t hash = hashtable->hash_function(T, 4, 2);
+    uint64_t q = hashtable->head[hash];
+    hashtable->set_name(q, 1);
+    hashtable->insert_string(T, 7, 8);
+    hash = hashtable->hash_function(T, 7, 8);
+    q = hashtable->head[hash];
+    hashtable->set_name(q, 2);
+    EXPECT_EQ(1U, hashtable->find_name(T, 4, 2));
+    EXPECT_EQ(2U, hashtable->find_name(T, 7, 8));
+    EXPECT_ANY_THROW(hashtable->find_name(T, 3, 3));
+    delete hashtable;
+}

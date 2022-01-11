@@ -117,6 +117,15 @@ public:
     uint8_t get_nth_character(const uint8_t *T, uint64_t idx, uint64_t n);
 
     /**
+     * @brief Function for finding the name of substring that is stored in the hastable.
+     * 
+     * @param m length of the substring
+     * @param p index of the beginning of the substring
+     * @return uint64_t name of the substring
+     */
+    uint64_t find_name(const uint8_t *T, uint64_t m, uint64_t p);
+
+    /**
      * @brief Destroy the HashTable object.
      */
     ~HashTable();
