@@ -247,9 +247,7 @@ uint8_t flbwt::HashTable::get_nth_character(const uint8_t *T, uint64_t idx, uint
 uint64_t flbwt::HashTable::find_name(const uint8_t *T, uint64_t m, uint64_t p)
 {
     uint64_t i;                              // index of the substring
-    uint64_t pp;                             // previous substring starting index
     uint64_t l;                              // length of substring under comparison
-    bool short_string = m <= this->SS_LIMIT; // determine type of the string
 
     // start by calculating the hash
     uint64_t h = this->hash_function(T, m, p);
@@ -259,7 +257,6 @@ uint64_t flbwt::HashTable::find_name(const uint8_t *T, uint64_t m, uint64_t p)
     uint64_t q = this->head[h];
     while (q != 0)
     {
-        pp = q;
         l = this->get_length(q);
 
         if (l == 0)
@@ -305,6 +302,11 @@ uint64_t flbwt::HashTable::find_name(const uint8_t *T, uint64_t m, uint64_t p)
     }
 
     throw std::runtime_error("hashtable->find_name() failed: Substring was not found");
+}
+
+uint8_t flbwt::HashTable::get_sentinel(uint64_t idx)
+{
+    return this->buf->get_int(idx, this->SW_BITS);
 }
 
 flbwt::HashTable::~HashTable()
