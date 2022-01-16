@@ -126,6 +126,11 @@ public:
     uint64_t find_name(const uint8_t *T, uint64_t m, uint64_t p);
 
     /**
+     * @brief Get the sentinel character at position idx.
+     */
+    uint8_t get_sentinel(uint64_t idx);
+
+    /**
      * @brief Destroy the HashTable object.
      */
     ~HashTable();
