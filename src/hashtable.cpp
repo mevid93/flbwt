@@ -121,8 +121,8 @@ uint8_t flbwt::HashTable::insert_string(const uint64_t m, uint8_t *p)
     // jump over name bytes
     r += this->NAME_BYTES;
 
-    // reset the following 4 fields --> make sure that that length
-    for (uint8_t i = 0; i < 4; i++)
+    // reset the following fields
+    for (uint8_t i = 0; i < 12; i++)
         *r++ = 0;
 
     this->rest[h] -= space_required;
@@ -220,10 +220,12 @@ void flbwt::HashTable::set_pointer(uint8_t *p, uint64_t pointer)
     *p++ = 1; // x bytes character
     *p++ = 2; // length
     p += 7;
-    while (pointer != 0)
+    uint8_t count = 0;
+    while (count < 8)
     {
         *p-- = pointer & 0xff;
         pointer >>= 8;
+        count++;
     }
 }
 
@@ -252,7 +254,7 @@ uint64_t flbwt::HashTable::get_name(uint8_t *p)
 {
     // get length
     uint64_t length = this->get_length(p);
-    
+
     // move pointer to the beginning of name area
     p++;
     uint8_t bytes = *p++;
@@ -275,12 +277,12 @@ void flbwt::HashTable::set_name(uint8_t *p, uint64_t name)
     uint64_t length = this->get_length(p);
 
     // move pointer to beginning of name area
-    p++;                 //skip sentinel
+    p++;                  //skip sentinel
     uint8_t bytes = *p++; // skip x bytes character
     p += bytes + length;
 
     p += this->NAME_BYTES - 1;
-    while (name != 0)
+    for (uint8_t i = 0; i < this ->NAME_BYTES; i++)
     {
         *p-- = name & 0xff;
         name >>= 8;

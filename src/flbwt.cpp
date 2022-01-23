@@ -257,7 +257,6 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
                 break;
             l1--;
             l2--;
-
         }
 
         if (l1 == 0)
@@ -303,8 +302,10 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     // add the last S* substring
     s[0] = r;
     container->hashtable->set_length(r, 1);
-    container->hashtable->set_name(r, 0);
     *r = 0;
+    r += 1 + 1 + 1 + 1;
+    for(uint8_t i = 0; i < container->hashtable->NAME_BYTES; i++)
+        *r++ = 0;
 
     return s;
 }
