@@ -1,25 +1,5 @@
 #include "utility.hpp"
 
-uint8_t flbwt::calculate_alphabet_size(const uint8_t *T, const uint64_t n)
-{
-    uint8_t alphabet[256] = {0};
-    uint8_t size = 0;
-
-    uint64_t i;
-    for (i = 0; i < n; i++)
-    {
-        uint8_t val = T[i];
-
-        if (alphabet[val] == 0)
-        {
-            alphabet[val]++;
-            size++;
-        }
-    }
-
-    return size;
-}
-
 const int tab64[64] = {
     63, 0, 58, 1, 59, 47, 53, 2,
     60, 39, 48, 27, 54, 33, 42, 3,

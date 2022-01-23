@@ -24,9 +24,10 @@ void bwt_file(const char *input_filename, const char *output_filename);
  * 
  * @param T input string
  * @param n length of the input string
+ * @param free_T free input string when not needed anymore (more efficient)
  * @return uint8_t* result string
  */
-uint8_t *bwt_string(const uint8_t *T, const uint64_t n);
+uint8_t *bwt_string(uint8_t *T, const uint64_t n, bool free_T);
 
 // REST OF THE FUNCTIONS ARE NOT MEANT FOR THE USER (ONLY FOR TESTING)
 
@@ -39,7 +40,7 @@ uint8_t *bwt_string(const uint8_t *T, const uint64_t n);
  * @param k alphabet size
  * @return container
  */
-flbwt::Container *extract_LMS_strings(const uint8_t *T, const uint64_t n, const uint8_t k);
+flbwt::Container *extract_LMS_strings(uint8_t *T, const uint64_t n);
 
 /**
  * @brief Function for sorting LMS substrings. 
@@ -47,12 +48,12 @@ flbwt::Container *extract_LMS_strings(const uint8_t *T, const uint64_t n, const 
  * @param T input string
  * @param container container where substrings are stored
  */
-uint64_t *sort_LMS_strings(const uint8_t *T, flbwt::Container *container);
+uint8_t **sort_LMS_strings(uint8_t *T, flbwt::Container *container);
 
 /**
  * @brief Create a shortened string T1.
  */
-sdsl::bit_vector *create_shortened_string(const uint8_t *T, const uint64_t n, flbwt::Container *container);
+sdsl::bit_vector *create_shortened_string(uint8_t *T, const uint64_t n, flbwt::Container *container);
 
 }
 
