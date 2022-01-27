@@ -93,6 +93,8 @@ private:
     uint8_t integer_bits;       // number of bits for single integer
     uint64_t max_integer;       // max integer that can be stored to PackedArray
     bool negative_integers;     // should the array support negative integers
+    uint64_t arr_length;        // length of raw data of arr
+    uint64_t signs_length;      // length of raw data of signs
 };
 
 }

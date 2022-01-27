@@ -47,18 +47,21 @@ flbwt::PackedArray::PackedArray(uint64_t length, uint64_t max_integer, bool supp
     uint64_t bits_required = length * this->integer_bits;
     uint64_t arr_length = bits_required / 64 + 1;
     this->arr = new uint64_t[arr_length];
+    this->arr_length = arr_length;
     std::fill_n(this->arr, arr_length, 0);
 
     // if negative numbers should be supported, allocate space for sign bits
     if (!this->negative_integers)
     {
         this->signs = NULL;
+        this->signs_length = 0;
         return;
     }
 
     bits_required = length;
     uint64_t signs_length = bits_required / 64 + 1;
     this->signs = new uint64_t[signs_length];
+    this->signs_length = signs_length;
     std::fill_n(this->signs, signs_length, 0);
 }
 
@@ -184,7 +187,7 @@ void flbwt::PackedArray::set_value(uint64_t index, int64_t value)
 
     // then we assign the remaining bits to next index of arr
     uint64_t bits_second_part = abs_value << (64 - width_second_part);
-    bit_mask = 0xffffffffffffffffUL >> width_second_part;
+    bit_mask = 0xffffffffffffffffUL << (64 - width_second_part);
     this->arr[arr_index + 1] = (this->arr[arr_index + 1] & (~bit_mask)) | bits_second_part;
 }
 
@@ -292,7 +295,7 @@ uint64_t *flbwt::PackedArray::get_raw_signs_pointer()
 
 flbwt::PackedArray::~PackedArray()
 {
-    delete this->arr;
+    delete[] this->arr;
     if (this->signs != NULL)
-        delete this->signs;
+        delete[] this->signs;
 }

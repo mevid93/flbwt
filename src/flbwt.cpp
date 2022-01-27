@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <stdlib.h>
 #include "flbwt.hpp"
@@ -8,7 +9,7 @@
 uint8_t *bwt_is(uint8_t *T, const uint64_t n, bool free_T);
 
 // allocate memory for the suffix array
-sdsl::bit_vector *create_empty_suffix_array(flbwt::Container *container);
+flbwt::PackedArray *create_empty_suffix_array(flbwt::Container *container);
 
 void flbwt::bwt_file(const char *input_filename, const char *output_filename)
 {
@@ -90,8 +91,12 @@ uint8_t *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     // sort the S*substrings and name them
     uint8_t **S = flbwt::sort_LMS_strings(T, container);
 
+    std::cout << "Substrings sorted by using quicksort! " << std::endl;
+
     // get new shortened string T1
-    sdsl::bit_vector *T1 = flbwt::create_shortened_string(T, n, container);
+    flbwt::PackedArray *T1 = flbwt::create_shortened_string(T, n, container);
+
+    std::cout << "Shortened string created: T1.length = " << T1->get_length() << std::endl;
 
     // release T if user allows it --> lower memory usage
     if (free_T)
@@ -101,16 +106,12 @@ uint8_t *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     }
 
     // create a suffix array for T1
-    sdsl::bit_vector *SA = create_empty_suffix_array(container);
+    flbwt::PackedArray *SA = create_empty_suffix_array(container);
 
     // sort suffixes using induced sorting (SAIS)
-    uint64_t max_name = container->num_of_unique_substrings + 1;
-    uint8_t bits_for_name = flbwt::position_of_msb(max_name);
-    uint64_t SA_length = container->num_of_substrings + 2;
-    uint8_t bits_for_SA_element = flbwt::position_of_msb(SA_length);
-    sdsl::bit_vector *SA_signs = new sdsl::bit_vector(SA_length, 0);
-    flbwt::sais_main(T1, 0, SA, SA_signs, 0, container->num_of_substrings + 1,
-                     container->num_of_unique_substrings + 2, bits_for_name, bits_for_SA_element);
+    flbwt::sais_main(T1, 0, SA, 0, container->num_of_substrings + 1, container->num_of_unique_substrings + 2);
+
+    std::cout << "SAIS computed!" << std::endl;
 
     // create BWT for T1
 
@@ -120,7 +121,6 @@ uint8_t *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     free(S);
     delete T1;
     delete SA;
-    delete SA_signs;
 
     return NULL;
 }
@@ -222,7 +222,7 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
             l = container->hashtable->get_length(r);
             if (l == 0) // last string for hashtable index
                 break;
-            if (l == 1) // get position of the next element
+            if (l == 2) // get position of the next element block
             {
                 p = container->hashtable->get_pointer(r);
                 continue;
@@ -310,7 +310,7 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     return s;
 }
 
-sdsl::bit_vector *flbwt::create_shortened_string(uint8_t *T, const uint64_t n, flbwt::Container *container)
+flbwt::PackedArray *flbwt::create_shortened_string(uint8_t *T, const uint64_t n, flbwt::Container *container)
 {
     // define how many substrings there is in total
     uint64_t total_substring_count = container->num_of_substrings + 2;
@@ -318,16 +318,15 @@ sdsl::bit_vector *flbwt::create_shortened_string(uint8_t *T, const uint64_t n, f
     // maximum name of any substring
     uint64_t max_name = container->num_of_unique_substrings + 1;
     // number of bits required to store a name
-    uint8_t bits_for_name = flbwt::position_of_msb(max_name);
-    sdsl::bit_vector *T1 = new sdsl::bit_vector(total_substring_count * bits_for_name, 0);
+    PackedArray *T1 = new PackedArray(total_substring_count, max_name, false);
 
     int previous_type = TYPE_L; // type of the previous character
     uint64_t p;                 // starting position of S* substring
     uint64_t q = n;             // ending position of S* substring
 
-    uint64_t j = total_substring_count * bits_for_name - bits_for_name;
-    T1->set_int(j, 0, bits_for_name);
-    j -= bits_for_name;
+    uint64_t j = total_substring_count - 1;
+    T1->set_value(j, 0);
+    j--;
 
     // scan the input string from right to left and save the S* substrings
     for (uint64_t i = n - 2; i >= 0; i--)
@@ -349,8 +348,8 @@ sdsl::bit_vector *flbwt::create_shortened_string(uint8_t *T, const uint64_t n, f
                 uint64_t name = container->hashtable->find_name(q - p + 1, &T[p]);
 
                 // insert name to T1
-                T1->set_int(j, name, bits_for_name);
-                j -= bits_for_name;
+                T1->set_value(j, name);
+                j--;
 
                 q = p;
             }
@@ -362,21 +361,18 @@ sdsl::bit_vector *flbwt::create_shortened_string(uint8_t *T, const uint64_t n, f
             break; // to prevent integer underflow
     }
 
-    T1->set_int(0, max_name, bits_for_name);
+    T1->set_value(0, max_name);
 
     return T1;
 }
 
-sdsl::bit_vector *create_empty_suffix_array(flbwt::Container *container)
+flbwt::PackedArray *create_empty_suffix_array(flbwt::Container *container)
 {
     // define how many substrings there is in total
     uint64_t total_substring_count = container->num_of_substrings + 2;
-
-    // number of bits required to store a element
-    uint8_t bits_for_name = flbwt::position_of_msb(total_substring_count);
-
-    // create suffix array and return it
-    sdsl::bit_vector *SA = new sdsl::bit_vector(total_substring_count * bits_for_name, 0);
+    
+    // create packed array
+    flbwt::PackedArray *SA = new flbwt::PackedArray(total_substring_count, total_substring_count, true);
 
     return SA;
 }

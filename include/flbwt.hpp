@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "container.hpp"
+#include "packed_array.hpp"
 
 namespace flbwt
 {
@@ -53,7 +54,7 @@ uint8_t **sort_LMS_strings(uint8_t *T, flbwt::Container *container);
 /**
  * @brief Create a shortened string T1.
  */
-sdsl::bit_vector *create_shortened_string(uint8_t *T, const uint64_t n, flbwt::Container *container);
+flbwt::PackedArray *create_shortened_string(uint8_t *T, const uint64_t n, flbwt::Container *container);
 
 }
 

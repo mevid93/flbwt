@@ -397,6 +397,8 @@ TEST(packed_array_test, get_value_24bit_1)
     EXPECT_EQ(-28, pa->get_value(3));
     EXPECT_EQ(0, pa->get_value(4));
     EXPECT_EQ(-16777215, pa->get_value(9));
+    pa->set_value(9, 0); 
+    EXPECT_EQ(0, pa->get_value(9));
     delete pa;
 }
 
@@ -487,5 +489,16 @@ TEST(packed_array_test, get_value_64bit_1)
     EXPECT_EQ(-28, pa->get_value(3));
     EXPECT_EQ(0, pa->get_value(4));
     EXPECT_EQ(-9223372036854775807, pa->get_value(9));
+    delete pa;
+}
+
+TEST(packed_array_test, extra_test_1)
+{
+    // pack and retrieve signed integers (24-bits excluding sign bit)
+    flbwt::PackedArray *pa = new flbwt::PackedArray(30000, 7343373, false);
+    pa->set_value(29098, 1);
+    EXPECT_EQ(1, pa->get_value(29098));
+    pa->set_value(29098, 2);
+    EXPECT_EQ(2, pa->get_value(29098));
     delete pa;
 }
