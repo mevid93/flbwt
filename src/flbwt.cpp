@@ -4,6 +4,7 @@
 #include "flbwt.hpp"
 #include "utility.hpp"
 #include "sais.hpp"
+#include "induce.hpp"
 
 // algorithm 1 from the research paper (modified induced sorting)
 uint8_t *bwt_is(uint8_t *T, const uint64_t n, bool free_T);
@@ -113,13 +114,34 @@ uint8_t *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 
     std::cout << "SAIS computed!" << std::endl;
 
-    // create BWT for T1
+    // create bwt for T1?
+    for (uint64_t i = 0; i < container->num_of_substrings + 1; i++)
+    {
+        uint64_t val = SA->get_value(i);
+        SA->set_value(i, val + 1);
+    }
 
-    // create BWT for the original input string T
+    for (uint64_t i = 0; i < container->num_of_substrings + 1; i++)
+    {
+        uint64_t l;
+        uint8_t *q;
+        uint64_t p;
+        p = SA->get_value(i);
+        q = S[T1->get_value(p - 1)];
+        l = container->hashtable->get_length(q);
+        uint64_t value = container->hashtable->get_first_character_pointer(q) + l - 1 - container->bwp_base;
+        SA->set_value(i, value);
+    }
 
-    delete container;
+    // release resources that are no longer needed
     free(S);
     delete T1;
+
+    // create BWT for the original input string T
+    // flbwt::induce_bwt(SA, container);
+
+
+    delete container;
     delete SA;
 
     return NULL;
@@ -211,6 +233,17 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     uint64_t p, i, j, l, m;
     uint8_t *r, *q;
 
+    // allocate memory for head string and ending substring
+    p = container->head_string_end;
+    uint64_t bufsize = container->hashtable->bufsize;
+    uint64_t space_required = 1 + 1 + container->hashtable->calculate_lenlen(p + 1) + (p + 1) + container->hashtable->NAME_BYTES;
+    space_required += 1 + 1 + 1 + 1 + container->hashtable->NAME_BYTES;
+    r = (uint8_t *)realloc(container->hashtable->buf, container->hashtable->bufsize + space_required);
+    if (r != container->hashtable->buf)
+        container->hashtable->buf = r;
+    container->hashtable->bufsize += space_required;
+    uint64_t pos = bufsize;
+
     j = 1; // j == 0 is for the head string T[0..p]
     for (i = 0; i < container->hashtable->HTSIZE; i++)
     {
@@ -276,17 +309,6 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     }
 
     // add the head substring T[0..p] and last S* substring T[n] --> needed for BWT
-    uint64_t bufsize = container->hashtable->bufsize;
-
-    uint64_t space_required = 1 + 1 + container->hashtable->calculate_lenlen(p + 1) + (p + 1) + container->hashtable->NAME_BYTES;
-    space_required += 1 + 1 + 1 + 1 + container->hashtable->NAME_BYTES;
-
-    r = (uint8_t *)realloc(container->hashtable->buf, container->hashtable->bufsize + space_required);
-    if (r != container->hashtable->buf)
-        container->hashtable->buf = r;
-    uint64_t pos = bufsize;
-
-    // add the head string
     r = &container->hashtable->buf[pos];
     s[container->num_of_unique_substrings + 1] = r;
     *r = T[0] + 1;
@@ -304,8 +326,27 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     container->hashtable->set_length(r, 1);
     *r = 0;
     r += 1 + 1 + 1 + 1;
-    for(uint8_t i = 0; i < container->hashtable->NAME_BYTES; i++)
+    for (uint8_t i = 0; i < container->hashtable->NAME_BYTES; i++)
         *r++ = 0;
+
+    // find maximum and minimum pointers --> needed later
+    container->min_ptr = s[0];
+    container->max_ptr = s[0];
+
+    for (uint64_t i = 1; i < container->num_of_unique_substrings + 2; i++)
+    {
+        if (s[i] < container->min_ptr)
+            container->min_ptr = s[i];
+        if (s[i] > container->max_ptr)
+            container->max_ptr = s[i];
+    }
+
+    container->bwp_width = flbwt::position_of_msb(container->max_ptr - container->min_ptr + 2);
+
+    // also store the maximum value that will be user later --> needed for SA memory allocation
+    container->bwp_base = container->min_ptr - 1;
+    l = container->hashtable->get_length(container->max_ptr);
+    container->sa_max_value = container->hashtable->get_first_character_pointer(container->max_ptr) + l - 1 - container->bwp_base; 
 
     return s;
 }
@@ -368,11 +409,14 @@ flbwt::PackedArray *flbwt::create_shortened_string(uint8_t *T, const uint64_t n,
 
 flbwt::PackedArray *create_empty_suffix_array(flbwt::Container *container)
 {
-    // define how many substrings there is in total
+    // how many substrings there are in total
     uint64_t total_substring_count = container->num_of_substrings + 2;
-    
+
+    // maximum value that will be stored to SA in any point of the algorithm
+    int64_t max_value = container->sa_max_value;
+
     // create packed array
-    flbwt::PackedArray *SA = new flbwt::PackedArray(total_substring_count, total_substring_count, true);
+    flbwt::PackedArray *SA = new flbwt::PackedArray(total_substring_count, max_value, true);
 
     return SA;
 }

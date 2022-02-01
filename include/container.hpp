@@ -20,6 +20,11 @@ public:
     uint64_t n;                            // length of the input string
     uint64_t k;                            // alphabet size
     uint64_t head_string_end;              // index of the last character of the head string T[0...p]
+    uint8_t *min_ptr;                      
+    uint8_t *max_ptr;                      
+    uint8_t *bwp_base;                     
+    uint8_t bwp_width; 
+    uint64_t sa_max_value;
     
     /**
      * @brief Construct a new Container object.
