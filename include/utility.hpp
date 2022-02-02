@@ -30,6 +30,15 @@ int log2_64(uint64_t value);
  */
 uint8_t position_of_msb(const uint64_t n);
 
+/**
+ * @brief Get the maximum unsigned integer that can be
+ * presented with n bits.
+ * 
+ * @param n number of bits
+ * @return uint64_t maximum value
+ */
+uint64_t max_integer(const uint8_t n);
+
 }
 
 #endif

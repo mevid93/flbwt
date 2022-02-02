@@ -138,12 +138,14 @@ uint8_t *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     delete T1;
 
     // create BWT for the original input string T
-    // flbwt::induce_bwt(SA, container);
+    uint8_t *BWT = flbwt::induce_bwt(SA, container);
 
+    std::cout << "BWT induced!" << std::endl;
 
     delete container;
     delete SA;
-
+    delete[] BWT;
+    
     return NULL;
 }
 
@@ -312,10 +314,10 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     r = &container->hashtable->buf[pos];
     s[container->num_of_unique_substrings + 1] = r;
     *r = T[0] + 1;
-    container->hashtable->set_length(r, p + 1);
+    container->hashtable->set_length(r, container->head_string_end + 1);
     container->hashtable->set_name(r, container->num_of_unique_substrings + 1);
     r = container->hashtable->get_first_character_pointer(r);
-    for (i = 0; i < p + 1; i++)
+    for (i = 0; i < container->head_string_end + 1; i++)
     {
         *r++ = T[i];
     }
