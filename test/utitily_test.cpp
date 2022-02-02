@@ -29,3 +29,16 @@ TEST(utility_test, position_of_ms_bit_2)
     EXPECT_EQ(EXPECTED_VALUE, flbwt::position_of_msb(x));
 }
 
+TEST(utility_test, max_integer_1)
+{
+    const uint8_t x = 4;
+    const uint64_t EXPECTED_VALUE = 15;
+    EXPECT_EQ(EXPECTED_VALUE, flbwt::max_integer(x));
+}
+
+TEST(utility_test, max_integer_2)
+{
+    const uint8_t x = 64;
+    const uint64_t EXPECTED_VALUE = 0xffffffffffffffff;
+    EXPECT_EQ(EXPECTED_VALUE, flbwt::max_integer(x));
+}

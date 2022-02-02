@@ -46,7 +46,7 @@ flbwt::PackedArray::PackedArray(uint64_t length, uint64_t max_integer, bool supp
     // allocate space for integers (excluding sign bits)
     uint64_t bits_required = length * this->integer_bits;
     uint64_t arr_length = bits_required / 64 + 1;
-    this->arr = new uint64_t[arr_length];
+    this->arr = (uint64_t *)malloc(arr_length * sizeof(uint64_t));
     this->arr_length = arr_length;
     std::fill_n(this->arr, arr_length, 0);
 
@@ -60,7 +60,7 @@ flbwt::PackedArray::PackedArray(uint64_t length, uint64_t max_integer, bool supp
 
     bits_required = length;
     uint64_t signs_length = bits_required / 64 + 1;
-    this->signs = new uint64_t[signs_length];
+    this->signs = (uint64_t *)malloc(signs_length * sizeof(uint64_t));
     this->signs_length = signs_length;
     std::fill_n(this->signs, signs_length, 0);
 }
@@ -293,9 +293,29 @@ uint64_t *flbwt::PackedArray::get_raw_signs_pointer()
     return this->signs;
 }
 
+void flbwt::PackedArray::reallocate(uint64_t length)
+{
+    this->length = length;
+
+    // release memory from the main array
+    uint64_t bits_required = length * this->integer_bits;
+    uint64_t arr_length = bits_required / 64 + 1;
+    this->arr = (uint64_t *)realloc(this->arr, arr_length * sizeof(uint64_t));
+    this->arr_length = arr_length;
+
+    if (this->signs == NULL)
+        return;
+
+    // release memory from the supporting sign array
+    bits_required = length;
+    uint64_t signs_length = bits_required / 64 + 1;
+    this->signs = (uint64_t *)realloc(this->signs, signs_length * sizeof(uint64_t));
+    this->signs_length = signs_length;
+}
+
 flbwt::PackedArray::~PackedArray()
 {
-    delete[] this->arr;
+    free(this->arr);
     if (this->signs != NULL)
-        delete[] this->signs;
+        free(this->signs);
 }

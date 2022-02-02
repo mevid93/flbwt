@@ -36,3 +36,18 @@ uint8_t flbwt::position_of_msb(const uint64_t n)
 
     return position + 1;
 }
+
+uint64_t flbwt::max_integer(uint8_t n)
+{
+    if (n == 0)
+        return 0;
+
+    uint64_t value = 1;
+
+    for (uint16_t i = 0; i < n - 1; i++)
+    {
+        value = (value << 1) | 1;
+    }
+
+    return value;
+}
