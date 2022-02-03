@@ -14,7 +14,12 @@ class Container
 {
 public:
     flbwt::HashTable *hashtable;           // hashtable for storing substrings
-    uint64_t c_substr_counts[256];         // number of S* substrings starting with character C 
+    uint64_t M[256 + 2];                   
+    uint64_t M2[256 + 2];
+    uint64_t M3[256 + 2];
+    uint64_t C[256 + 2];
+    uint64_t C2[256 + 2];
+    uint64_t NL[256 + 2];
     uint64_t num_of_substrings;            // number of all substrings
     uint64_t num_of_unique_substrings;     // number of unique substrings
     uint64_t n;                            // length of the input string
@@ -25,6 +30,7 @@ public:
     uint8_t *bwp_base;                     
     uint8_t bwp_width; 
     uint64_t sa_max_value;
+    uint8_t *lastptr;
     
     /**
      * @brief Construct a new Container object.

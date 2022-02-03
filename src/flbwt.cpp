@@ -176,7 +176,11 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
     uint64_t p;                  // starting position of S* substring
     uint64_t q = n;              // ending position of S* substring
     alphabet[0]++;
+    container->M[0]++;
     alphabet[T[n - 1]]++;
+    container->M[T[n - 1] + 1]++;
+    container->NL[T[n - 1] + 1]++;
+    container->C[0]++;
     container->k++;
 
     /* scan the input string from right to left and save the S* substrings */
@@ -189,6 +193,7 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
             alphabet[val]++;
             container->k++;
         }
+        container->M[val + 1]++;
 
         // check if character is TYPE_S
         if (T[i] < T[i + 1])
@@ -202,9 +207,8 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
             if (previous_type == TYPE_S)
             {
                 p = i + 1;
-
+                container->C[T[p] + 1]++;
                 container->num_of_substrings++;
-                container->c_substr_counts[T[p]]++;
 
                 // insert unique substrings into hashtable
                 if (container->hashtable->insert_string(q - p + 1, &T[p]))
@@ -214,6 +218,12 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
             }
 
             previous_type = TYPE_L;
+            container->NL[val + 1]++;
+        }
+        else
+        { // same as previous character
+            if (previous_type == TYPE_L)
+                container->NL[val + 1]++;
         }
 
         if (i == 0)
@@ -317,6 +327,7 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     container->hashtable->set_length(r, container->head_string_end + 1);
     container->hashtable->set_name(r, container->num_of_unique_substrings + 1);
     r = container->hashtable->get_first_character_pointer(r);
+    container->lastptr = r;
     for (i = 0; i < container->head_string_end + 1; i++)
     {
         *r++ = T[i];

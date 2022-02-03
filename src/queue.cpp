@@ -18,16 +18,46 @@ flbwt::Queue::~Queue()
 {
     qblock *tmp;
 
-    while(this->sb != NULL)
+    while (this->sb != NULL)
     {
         tmp = this->sb;
         this->sb = this->sb->next;
-        
+
         if (tmp->b != NULL)
             delete tmp->b;
-        
+
         free(tmp);
     }
+}
+
+void flbwt::Queue::enqueue(uint64_t x)
+{
+    qblock *qb;
+
+    if (this->e_ofs == QSIZ - 1)
+    { // current block is full
+        qb = (qblock *)malloc(sizeof(qblock));
+        qb->b = new PackedArray(QSIZ, this->max_value, false);
+
+        if (this->eb == NULL)
+        { // no blocks
+            this->sb = this->eb = qb;
+            this->s_ofs = 0;
+            qb->prev = qb->next = NULL;
+        }
+        else
+        {
+            this->eb->next = qb;    // add after the current last block
+            qb->prev = this->eb;
+            qb->next = NULL;
+            this->eb = qb;
+        }
+
+        this->e_ofs = -1;
+    }
+
+    this->eb->b->set_value(++this->e_ofs, x);
+    this->n++;
 }
 
 void flbwt::Queue::enqueue_l(uint64_t x)
@@ -58,4 +88,39 @@ void flbwt::Queue::enqueue_l(uint64_t x)
 
     this->sb->b->set_value(--this->s_ofs, x);
     this->n++;
+}
+
+int64_t flbwt::Queue::dequeue()
+{
+    qblock *qb;
+
+    int64_t x = this->sb->b->get_value(this->s_ofs++);
+
+    if (this->s_ofs == QSIZ)
+    { // current block is empty
+        qb = this->sb;
+        this->sb = qb->next;
+        delete qb->b;
+        free(qb);
+
+        if (this->sb == NULL)
+        { // the block is gone
+            this->eb = NULL;
+            this->e_ofs = QSIZ - 1;
+            this->s_ofs = 0;
+        }
+        else
+        {
+            this->sb->prev = NULL;
+            this->s_ofs = 0;
+        }
+    }
+
+    this->n--;
+    return x;
+}
+
+bool flbwt::Queue::is_empty()
+{
+    return this->n == 0;
 }
