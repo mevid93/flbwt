@@ -8,7 +8,7 @@
 #define TYPE_LMS 2
 #endif
 
-uint8_t *flbwt::induce_bwt(flbwt::PackedArray *SA, flbwt::Container *container)
+flbwt::BWT_result *flbwt::induce_bwt(flbwt::PackedArray *SA, flbwt::Container *container)
 {
     uint8_t bwp_w = container->bwp_width;
     uint8_t *bwp_base = container->bwp_base;
@@ -126,29 +126,57 @@ uint8_t *flbwt::induce_bwt(flbwt::PackedArray *SA, flbwt::Container *container)
         }
     }
 
-    for (i = 0; i < container->n + 1; i++)
+    for (c = 0; c <= 256 + 1; c++)
     {
-        std::cout << BWT[i];
+        delete Q[TYPE_LMS][c];
+        delete Q[TYPE_L][c];
     }
-    std::cout << std::endl;
 
-    // for (i = 0; i <= 256 + 1; i++)
-    // {
-    //     std::cout << "M[" << i << "] = " << container->M[i] << ", ";
-    //     std::cout << "M2[" << i << "] = " << container->M2[i] << ", ";
-    //     std::cout << "M3[" << i << "] = " << container->M3[i] << ", ";
-    //     std::cout << "C[" << i << "] = " << container->C[i] << ", ";
-    //     std::cout << "C2[" << i << "] = " << container->C2[i] << ", ";
-    //     std::cout << "NL[" << i << "] = " << container->NL[i] << std::endl;
-    // }
+    for (c = 0; c <= 256 + 1; c++)
+        Q[TYPE_L][c] = new flbwt::Queue(bwp_w);
+
+    container->M2[0] = 0;
+    for (c = 1; c <= 256 + 1; c++)
+        container->M2[c] = container->M2[c - 1] + container->M[c];
+
+    int64_t c0;
+    for (c = 256 + 1; c >= 0; c--)
+    {
+        for (t = 1; t >= 0; t--)
+        {
+            while(!Q[t][c]->is_empty())
+            {
+                q = bwp_base + Q[t][c]->dequeue();
+                c1 = q[-1];
+
+                if (c1 <= c - 1)
+                {
+                    Q[TYPE_L][c1 + 1]->enqueue((q - 1) - bwp_base);
+
+                    if (q - 1 == container->lastptr)
+                    {
+                        last = container->M2[c1 + 1]--;
+                    }
+                    else
+                    {
+                        c0 = q[-2];
+                        BWT[container->M2[c1 + 1]--] = (c0 <= c1) ? c0 : BWT[--container->C2[c1 + 1]];
+                    }
+                }
+            }
+        }
+    }
 
     for (uint16_t i = 0; i <= 256 + 1; i++)
     {
-        delete Q[TYPE_LMS][i];
         delete Q[TYPE_L][i];
         delete Q[TYPE_S][i];
     }
 
     // return the result bwt
-    return BWT;
+    BWT_result *bwt_result = (BWT_result *)malloc(sizeof(BWT_result));
+    bwt_result->last = last;
+    bwt_result->BWT = BWT;
+
+    return bwt_result;
 }

@@ -33,10 +33,10 @@ TEST(hashtable_test, get_length_1)
     flbwt::HashTable *hashtable = new flbwt::HashTable(100, n);
     hashtable->buf = (uint8_t*)malloc(100 * sizeof(uint8_t));
     hashtable->bufsize = 100;
-    hashtable->buf[1] = 3;
+    hashtable->buf[0] = 3;
+    hashtable->buf[1] = 123;                                        // 01111011
     hashtable->buf[2] = 123;                                        // 01111011
     hashtable->buf[3] = 123;                                        // 01111011
-    hashtable->buf[4] = 123;                                        // 01111011
     EXPECT_EQ(8092539U, hashtable->get_length(&hashtable->buf[0])); // 01111011 01111011 01111011
     delete hashtable;
 }
@@ -47,7 +47,8 @@ TEST(hashtable_test, get_length_2)
     flbwt::HashTable *hashtable = new flbwt::HashTable(100, n);
     hashtable->buf = (uint8_t*)malloc(100 * sizeof(uint8_t));
     hashtable->bufsize = 100;
-    hashtable->buf[1] = 8;
+    hashtable->buf[0] = 8;
+    hashtable->buf[1] = 0xff;
     hashtable->buf[2] = 0xff;
     hashtable->buf[3] = 0xff;
     hashtable->buf[4] = 0xff;
@@ -55,7 +56,6 @@ TEST(hashtable_test, get_length_2)
     hashtable->buf[6] = 0xff;
     hashtable->buf[7] = 0xff;
     hashtable->buf[8] = 0xff;
-    hashtable->buf[9] = 0xff;
     EXPECT_EQ(0xffffffffffffffff, hashtable->get_length(&hashtable->buf[0]));
     delete hashtable;
 }
@@ -67,10 +67,10 @@ TEST(hashtable_test, set_length_1)
     hashtable->buf = (uint8_t*)malloc(100 * sizeof(uint8_t));
     hashtable->bufsize = 100;
     hashtable->set_length(&hashtable->buf[0], 0xfeffef);
-    EXPECT_EQ(3U, hashtable->buf[1]);
-    EXPECT_EQ(0xfe, hashtable->buf[2]);
-    EXPECT_EQ(0xff, hashtable->buf[3]);
-    EXPECT_EQ(0xef, hashtable->buf[4]);
+    EXPECT_EQ(3U, hashtable->buf[0]);
+    EXPECT_EQ(0xfe, hashtable->buf[1]);
+    EXPECT_EQ(0xff, hashtable->buf[2]);
+    EXPECT_EQ(0xef, hashtable->buf[3]);
     delete hashtable;
 }
 
@@ -81,10 +81,10 @@ TEST(hashtable_test, set_length_2)
     hashtable->buf = (uint8_t*)malloc(100 * sizeof(uint8_t));
     hashtable->bufsize = 100;
     hashtable->set_length(&hashtable->buf[0], 0xfe0000);
-    EXPECT_EQ(3U, hashtable->buf[1]);
-    EXPECT_EQ(0xfe, hashtable->buf[2]);
+    EXPECT_EQ(3U, hashtable->buf[0]);
+    EXPECT_EQ(0xfe, hashtable->buf[1]);
+    EXPECT_EQ(0x00, hashtable->buf[2]);
     EXPECT_EQ(0x00, hashtable->buf[3]);
-    EXPECT_EQ(0x00, hashtable->buf[4]);
     delete hashtable;
 }
 
@@ -118,16 +118,16 @@ TEST(hashtable_test, get_pointer_1)
     flbwt::HashTable *hashtable = new flbwt::HashTable(100, n);
     hashtable->buf = (uint8_t*)malloc(0xff * sizeof(uint8_t));
     hashtable->bufsize = 0xff;
-    hashtable->buf[1] = 1;
-    hashtable->buf[2] = 1;  // length 1 --> pointer
-    hashtable->buf[3] = 1;  // 0x01
-    hashtable->buf[4] = 2;  // 0x02
-    hashtable->buf[5] = 3;  // 0x03
-    hashtable->buf[6] = 4;  // 0x04
-    hashtable->buf[7] = 5;  // 0x05
-    hashtable->buf[8] = 6;  // 0x06
-    hashtable->buf[9] = 7;  // 0x07
-    hashtable->buf[10] = 8; // 0x08
+    hashtable->buf[0] = 1;
+    hashtable->buf[1] = 2;  // length 2 --> pointer
+    hashtable->buf[2] = 1;  // 0x01
+    hashtable->buf[3] = 2;  // 0x02
+    hashtable->buf[4] = 3;  // 0x03
+    hashtable->buf[5] = 4;  // 0x04
+    hashtable->buf[6] = 5;  // 0x05
+    hashtable->buf[7] = 6;  // 0x06
+    hashtable->buf[8] = 7;  // 0x07
+    hashtable->buf[9] = 8; // 0x08
     EXPECT_EQ(72623859790382856U, hashtable->get_pointer(&hashtable->buf[0]));
     delete hashtable;
 }
@@ -139,16 +139,16 @@ TEST(hashtable_test, set_pointer_1)
     hashtable->buf = (uint8_t*)malloc(0xff * sizeof(uint8_t));
     hashtable->bufsize = 0xff;
     hashtable->set_pointer(&hashtable->buf[0], 72623859790382856U);
-    EXPECT_EQ(1U, hashtable->buf[1]); // x bytes character
-    EXPECT_EQ(2U, hashtable->buf[2]); // length
-    EXPECT_EQ(1U, hashtable->buf[3]); // first part of the pointer
-    EXPECT_EQ(2U, hashtable->buf[4]);
-    EXPECT_EQ(3U, hashtable->buf[5]);
-    EXPECT_EQ(4U, hashtable->buf[6]);
-    EXPECT_EQ(5U, hashtable->buf[7]);
-    EXPECT_EQ(6U, hashtable->buf[8]);
-    EXPECT_EQ(7U, hashtable->buf[9]);
-    EXPECT_EQ(8U, hashtable->buf[10]); // part of the pointer
+    EXPECT_EQ(1U, hashtable->buf[0]); // x bytes character
+    EXPECT_EQ(2U, hashtable->buf[1]); // length
+    EXPECT_EQ(1U, hashtable->buf[2]); // first part of the pointer
+    EXPECT_EQ(2U, hashtable->buf[3]);
+    EXPECT_EQ(3U, hashtable->buf[4]);
+    EXPECT_EQ(4U, hashtable->buf[5]);
+    EXPECT_EQ(5U, hashtable->buf[6]);
+    EXPECT_EQ(6U, hashtable->buf[7]);
+    EXPECT_EQ(7U, hashtable->buf[8]);
+    EXPECT_EQ(8U, hashtable->buf[9]); // part of the pointer
     delete hashtable;
 }
 
@@ -186,7 +186,7 @@ TEST(hashtable_test, get_lenlen)
     flbwt::HashTable *hashtable = new flbwt::HashTable(100, n);
     hashtable->buf = (uint8_t*)malloc(0xff * sizeof(uint8_t));
     hashtable->bufsize = 0xff;
-    hashtable->buf[1] = 3;
+    hashtable->buf[0] = 3;
     EXPECT_EQ(3U, hashtable->get_lenlen(&hashtable->buf[0])); // x bytes character
     delete hashtable;
 }
@@ -206,8 +206,8 @@ TEST(hashtable_test, get_name_1)
     hashtable->buf = (uint8_t*)malloc(0xff * sizeof(uint8_t));
     hashtable->bufsize = 0xff;
     hashtable->NAME_BYTES = 2;
+    hashtable->buf[0] = 1;
     hashtable->buf[1] = 1;
-    hashtable->buf[2] = 1;
     hashtable->buf[4] = 1;  // 0x01
     hashtable->buf[5] = 2;  // 0x02
     EXPECT_EQ(0x0102U, hashtable->get_name(&hashtable->buf[0])); 
@@ -220,8 +220,8 @@ TEST(hashtable_test, set_name_1)
     flbwt::HashTable *hashtable = new flbwt::HashTable(100, n);
     hashtable->buf = (uint8_t*)malloc(0xff * sizeof(uint8_t));
     hashtable->bufsize = 0xff;
-    hashtable->buf[1] = 1;  // x bytes length
-    hashtable->buf[2] = 1;  // actual length
+    hashtable->buf[0] = 1;  // x bytes length
+    hashtable->buf[1] = 1;  // actual length
     hashtable->set_name(&hashtable->buf[0], 0xdead);
     EXPECT_EQ(0xdeU, hashtable->buf[4]); 
     EXPECT_EQ(0xadU, hashtable->buf[5]);
@@ -234,8 +234,8 @@ TEST(hashtable_test, get_first_character_pointer_1)
     flbwt::HashTable *hashtable = new flbwt::HashTable(100, n);
     hashtable->buf = (uint8_t*)malloc(0xff * sizeof(uint8_t));
     hashtable->bufsize = 0xff;
-    hashtable->buf[1] = 1;  // x bytes length
-    hashtable->buf[2] = 1;  // actual length
+    hashtable->buf[0] = 1;  // x bytes length
+    hashtable->buf[1] = 1;  // actual length
     uint8_t *p = hashtable->get_first_character_pointer(&hashtable->buf[0]);
     EXPECT_EQ(&hashtable->buf[3], p); 
     delete hashtable;

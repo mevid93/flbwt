@@ -110,9 +110,9 @@ uint8_t flbwt::HashTable::insert_string(const uint64_t m, uint8_t *p)
         r = &this->buf[q2];
     }
 
-    *r = p[0] + 1; // sentinel
     this->set_length(r, m);
-    r += 1 + 1 + length_bytes;
+    r += 1 + length_bytes;
+    *r++ = p[0] + 1; // sentinel
     for (uint64_t i = 0; i < m; i++)
     {
         *r++ = p[i];
@@ -148,7 +148,6 @@ uint64_t flbwt::HashTable::hash_function(const uint64_t m, uint8_t *p)
 
 uint64_t flbwt::HashTable::get_length(uint8_t *p)
 {
-    p++;                  // skip sentinel character
     uint8_t bytes = *p++; // number of bytes used to store the length
     if (bytes == 0)
         return 0;
@@ -165,7 +164,6 @@ void flbwt::HashTable::set_length(uint8_t *p, uint64_t length)
 {
     uint8_t *r;
     uint8_t value = (length & 0xff00000000000000) >> 56;
-    p++; // skip sentinel character
     r = p;
     *r = 8;
     p++;
@@ -188,13 +186,10 @@ void flbwt::HashTable::set_length(uint8_t *p, uint64_t length)
 uint64_t flbwt::HashTable::string_info_length(uint8_t *p, uint64_t length)
 {
     uint64_t total_length = 0;
-    p++; // sentinel
-    total_length++;
 
     uint8_t bytes = *p++; // x bytes character
     total_length += 1;
-
-    p += bytes + length + this->NAME_BYTES;
+    total_length++; // sentinel
     total_length += bytes + length + this->NAME_BYTES;
 
     return total_length;
@@ -203,7 +198,7 @@ uint64_t flbwt::HashTable::string_info_length(uint8_t *p, uint64_t length)
 uint64_t flbwt::HashTable::get_pointer(uint8_t *p)
 {
     uint64_t x = 0;
-    p += 3; // skip sentinel character plus length information
+    p += 2; // skip length information
 
     for (uint8_t i = 0; i < 8; i++)
     {
@@ -216,7 +211,6 @@ uint64_t flbwt::HashTable::get_pointer(uint8_t *p)
 
 void flbwt::HashTable::set_pointer(uint8_t *p, uint64_t pointer)
 {
-    p++;      //skip sentinel
     *p++ = 1; // x bytes character
     *p++ = 2; // length
     p += 7;
@@ -231,7 +225,6 @@ void flbwt::HashTable::set_pointer(uint8_t *p, uint64_t pointer)
 
 uint8_t flbwt::HashTable::get_lenlen(uint8_t *p)
 {
-    p++; // skip sentinel
     return *p;
 }
 
@@ -256,10 +249,9 @@ uint64_t flbwt::HashTable::get_name(uint8_t *p)
     uint64_t length = this->get_length(p);
 
     // move pointer to the beginning of name area
-    p++;
     uint8_t bytes = *p++;
     p += bytes + length;
-
+    p++; // sentinel
     uint64_t name = 0;
 
     for (uint8_t i = 0; i < this->NAME_BYTES; i++)
@@ -277,12 +269,12 @@ void flbwt::HashTable::set_name(uint8_t *p, uint64_t name)
     uint64_t length = this->get_length(p);
 
     // move pointer to beginning of name area
-    p++;                  //skip sentinel
     uint8_t bytes = *p++; // skip x bytes character
     p += bytes + length;
+    p++; //skip sentinel
 
     p += this->NAME_BYTES - 1;
-    for (uint8_t i = 0; i < this ->NAME_BYTES; i++)
+    for (uint8_t i = 0; i < this->NAME_BYTES; i++)
     {
         *p-- = name & 0xff;
         name >>= 8;
@@ -291,9 +283,9 @@ void flbwt::HashTable::set_name(uint8_t *p, uint64_t name)
 
 uint8_t *flbwt::HashTable::get_first_character_pointer(uint8_t *p)
 {
-    p++; // skip sentinel
     uint8_t bytes = *p++;
     p += bytes;
+    p++; // skip sentinel
     return p;
 }
 

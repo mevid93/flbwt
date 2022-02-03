@@ -16,17 +16,18 @@ flbwt::Queue::Queue(uint8_t w)
 
 flbwt::Queue::~Queue()
 {
-    qblock *tmp;
+    qblock *qb, *q;
 
-    while (this->sb != NULL)
+    qb = this->sb;
+
+    while (qb != NULL)
     {
-        tmp = this->sb;
-        this->sb = this->sb->next;
+        q = qb->next;
 
-        if (tmp->b != NULL)
-            delete tmp->b;
+        delete qb->b;
+        free(qb);
 
-        free(tmp);
+        qb = q;
     }
 }
 

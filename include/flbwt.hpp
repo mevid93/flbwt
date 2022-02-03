@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "container.hpp"
 #include "packed_array.hpp"
+#include "induce.hpp"
 
 namespace flbwt
 {
@@ -26,9 +27,9 @@ void bwt_file(const char *input_filename, const char *output_filename);
  * @param T input string
  * @param n length of the input string
  * @param free_T free input string when not needed anymore (more efficient)
- * @return uint8_t* result string
+ * @return flbwt::BWT_result* result of BWT
  */
-uint8_t *bwt_string(uint8_t *T, const uint64_t n, bool free_T);
+flbwt::BWT_result *bwt_string(uint8_t *T, const uint64_t n, bool free_T);
 
 // REST OF THE FUNCTIONS ARE NOT MEANT FOR THE USER (ONLY FOR TESTING)
 
