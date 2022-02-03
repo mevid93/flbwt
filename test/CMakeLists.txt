@@ -7,6 +7,8 @@ option(BUILD_TESTS "Build all tests." OFF) # Makes boolean 'test' available.
 
 if (BUILD_TESTS)
 
+    include(GoogleTest)
+
     file(GLOB TEST_SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
     add_executable(UnitTests "${TEST_SRC_FILES}")
 
@@ -16,7 +18,6 @@ if (BUILD_TESTS)
     # Extra linking for the project.
     target_link_libraries(UnitTests flbwt)
 
-    include(GoogleTest)
     gtest_discover_tests(UnitTests)
 
 endif()

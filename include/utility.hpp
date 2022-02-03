@@ -6,29 +6,20 @@
 namespace flbwt {
 
 /**
- * @brief Calculate the alphabet size of the input string.
+ * @brief Fast algorithm to calculate log2 for unsigned 64-bit integer.
  * 
- * @param T input string
- * @param n input string lentgth
- * @return uint8_t alphabet size
+ * @param value 64-bit unsigned integer
+ * @return uint8_t result of log2
  */
-uint8_t calculate_alphabet_size(const uint8_t *T, const uint64_t n);
+uint8_t log2_64(uint64_t value);
 
 /**
- * @brief Fast algorithm to calculate log2 for 64-bit integer.
+ * @brief Get the position of most significant bit of 64-bit unsigned integer.
  * 
- * @param value 64-bit input integer
- * @return int result of log2
+ * @param n 64-bit unsigned integer
+ * @return uint8_t msb bit position
  */
-int log2_64(uint64_t value);
-
-/**
- * @brief Get the position of most significant bit.
- * 
- * @param n value to be analyzed
- * @return uint8_t bit position
- */
-uint8_t position_of_msb(const uint64_t n);
+uint8_t position_of_msb(uint64_t n);
 
 /**
  * @brief Get the maximum unsigned integer that can be
@@ -37,7 +28,7 @@ uint8_t position_of_msb(const uint64_t n);
  * @param n number of bits
  * @return uint64_t maximum value
  */
-uint64_t max_integer(const uint8_t n);
+uint64_t max_integer(uint8_t n);
 
 }
 

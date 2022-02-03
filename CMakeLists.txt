@@ -25,7 +25,6 @@ add_subdirectory(lib)
 #----------------------------------------------------------------------------
 file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 add_library(flbwt "${SRC_FILES}")
-target_link_libraries(flbwt LINK_PUBLIC sdsl)
 target_include_directories(flbwt PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 #----------------------------------------------------------------------------

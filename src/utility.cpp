@@ -1,6 +1,6 @@
 #include "utility.hpp"
 
-const int tab64[64] = {
+const uint8_t tab64[64] = {
     63, 0, 58, 1, 59, 47, 53, 2,
     60, 39, 48, 27, 54, 33, 42, 3,
     61, 51, 37, 40, 49, 18, 28, 20,
@@ -10,7 +10,7 @@ const int tab64[64] = {
     56, 45, 25, 31, 35, 16, 9, 12,
     44, 24, 15, 8, 23, 7, 6, 5};
 
-int flbwt::log2_64(uint64_t value)
+uint8_t flbwt::log2_64(uint64_t value)
 {
     value |= value >> 1;
     value |= value >> 2;
@@ -21,7 +21,7 @@ int flbwt::log2_64(uint64_t value)
     return tab64[((uint64_t)((value - (value >> 1)) * 0x07EDD5E59A4E28C2)) >> 58];
 }
 
-uint8_t flbwt::position_of_msb(const uint64_t n)
+uint8_t flbwt::position_of_msb(uint64_t n)
 {
     uint8_t position = 0;
 
