@@ -7,10 +7,16 @@
 
 namespace flbwt
 {
+    struct BWT_result 
+    {
+        uint64_t last;
+        uint8_t *BWT;
+    };
+
     /**
      * @brief Function for inducing the BWT for the original input string T.
      */
-    uint8_t *induce_bwt(flbwt::PackedArray *SA, flbwt::Container *container);
+    flbwt::BWT_result *induce_bwt(flbwt::PackedArray *SA, flbwt::Container *container);
 }
 
 #endif

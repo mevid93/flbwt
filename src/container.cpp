@@ -9,7 +9,12 @@ flbwt::Container::Container()
     this->k = 0;
     this->n = 0;
     this->num_of_unique_substrings = 0;
-    std::fill_n(this->c_substr_counts, 256, 0);
+    std::fill_n(this->M, 256 + 2, 0);
+    std::fill_n(this->M2, 256 + 2, 0);
+    std::fill_n(this->M3, 256 + 2, 0);
+    std::fill_n(this->C, 256 + 2, 0);
+    std::fill_n(this->C2, 256 + 2, 0);
+    std::fill_n(this->NL, 256+ 2, 0);
 }
 
 flbwt::Container::~Container()

@@ -8,18 +8,17 @@ namespace flbwt
 
     /**
      * Each unique substring will have the following format...
-     * 1. sentinel character (one byte), 
-     * 2. length x in bytes (how many bytes need to store the length),
-     * 3. x bytes (when combined --> total length),
+     * 1. length x in bytes (how many bytes need to store the length),
+     * 2. x bytes (when combined --> total length),
+     * 3. sentinel character (one byte), 
      * 4. substring characters (total length * 1 byte)
      * 5. bytes for name (when combined --> name)
      * 
      * POINTER to the next block is a special case with the following format:
-     * 1. sentinel character (one byte), 
-     * 2. length x in bytes (how many bytes need to store the length),
-     * 3. x bytes (when combined --> total length),
-     * 4. total length is always TWO for pointers
-     * 5. next 8 bytes store the position of the next element block
+     * 1. length x in bytes (how many bytes need to store the length),
+     * 2. x bytes (when combined --> total length),
+     * 3. total length is always TWO for pointers
+     * 4. next 8 bytes store the position of the next element block
      */
 
     /**

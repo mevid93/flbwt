@@ -4,10 +4,9 @@
 #include "flbwt.hpp"
 #include "utility.hpp"
 #include "sais.hpp"
-#include "induce.hpp"
 
 // algorithm 1 from the research paper (modified induced sorting)
-uint8_t *bwt_is(uint8_t *T, const uint64_t n, bool free_T);
+flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T);
 
 // allocate memory for the suffix array
 flbwt::PackedArray *create_empty_suffix_array(flbwt::Container *container);
@@ -44,30 +43,58 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
     T[n] = '\0';
 
     /* construct the bwt */
-    uint8_t *B = flbwt::bwt_string(T, n, true);
+    flbwt::BWT_result *B = flbwt::bwt_string(T, n, true);
 
     /* write the bwt to the output file */
-    fp = fopen(output_filename, "w+");
+    fp = fopen(output_filename, "wb");
 
     if (fp == NULL)
     {
         throw std::invalid_argument("fopen failed(): Could not open output file");
     }
 
-    if (B != NULL)
+    if (B != NULL && B->BWT != NULL)
     {
-        fwrite(B, sizeof(uint8_t), n * sizeof(uint8_t), fp);
+        // write rank of the last character to the first 64 bits
+        uint8_t *rank = new uint8_t[8];
+        rank[0] = (0xff00000000000000 & B->last) >> 56;
+        rank[1] = (0x00ff000000000000 & B->last) >> 48;
+        rank[2] = (0x0000ff0000000000 & B->last) >> 40;
+        rank[3] = (0x000000ff00000000 & B->last) >> 32;
+        rank[4] = (0x00000000ff000000 & B->last) >> 24;
+        rank[5] = (0x0000000000ff0000 & B->last) >> 16;
+        rank[6] = (0x000000000000ff00 & B->last) >> 8;
+        rank[7] = 0x00000000000000ff & B->last;
+        fwrite(rank, sizeof(uint8_t), 8, fp);
+        delete[] rank;
+
+        // write other content
+        if (B->last == 0)
+        {
+            fwrite(B->BWT + 1, sizeof(uint8_t), n, fp);
+        }
+        else if (B->last == n)
+        {
+            fwrite(B->BWT, sizeof(uint8_t), n, fp);
+        }
+        else
+        {
+            fwrite(B->BWT, sizeof(uint8_t), B->last, fp);
+            fwrite(B->BWT + B->last + 1, sizeof(uint8_t), n - B->last, fp);
+        }
     }
 
     fclose(fp);
 
     if (B != NULL)
     {
+        if (B->BWT != NULL)
+            delete[] B->BWT;
         free(B);
     }
 }
 
-uint8_t *flbwt::bwt_string(uint8_t *T, const uint64_t n, bool free_T)
+flbwt::BWT_result *flbwt::bwt_string(uint8_t *T, const uint64_t n, bool free_T)
 {
     // check that input string is not null and n is greater than 0
     if (T == NULL || n <= 0)
@@ -80,24 +107,16 @@ uint8_t *flbwt::bwt_string(uint8_t *T, const uint64_t n, bool free_T)
     return bwt_is(T, n, free_T);
 }
 
-uint8_t *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
+flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 {
     // decompose the input string into S* substrings
     flbwt::Container *container = flbwt::extract_LMS_strings(T, n);
 
-    std::cout << "Number of S* substrings found: " << container->num_of_substrings << std::endl;
-    std::cout << "Number of unique S* substrings found: " << container->num_of_unique_substrings << std::endl;
-    std::cout << "Head string end: " << container->head_string_end << std::endl;
-
     // sort the S*substrings and name them
     uint8_t **S = flbwt::sort_LMS_strings(T, container);
 
-    std::cout << "Substrings sorted by using quicksort! " << std::endl;
-
     // get new shortened string T1
     flbwt::PackedArray *T1 = flbwt::create_shortened_string(T, n, container);
-
-    std::cout << "Shortened string created: T1.length = " << T1->get_length() << std::endl;
 
     // release T if user allows it --> lower memory usage
     if (free_T)
@@ -111,8 +130,6 @@ uint8_t *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 
     // sort suffixes using induced sorting (SAIS)
     flbwt::sais_main(T1, 0, SA, 0, container->num_of_substrings + 1, container->num_of_unique_substrings + 2);
-
-    std::cout << "SAIS computed!" << std::endl;
 
     // create bwt for T1?
     for (uint64_t i = 0; i < container->num_of_substrings + 1; i++)
@@ -138,15 +155,12 @@ uint8_t *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     delete T1;
 
     // create BWT for the original input string T
-    uint8_t *BWT = flbwt::induce_bwt(SA, container);
-
-    std::cout << "BWT induced!" << std::endl;
+    flbwt::BWT_result *BWT = flbwt::induce_bwt(SA, container);
 
     delete container;
     delete SA;
-    delete[] BWT;
-    
-    return NULL;
+
+    return BWT;
 }
 
 #define TYPE_L 1
@@ -176,7 +190,11 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
     uint64_t p;                  // starting position of S* substring
     uint64_t q = n;              // ending position of S* substring
     alphabet[0]++;
+    container->M[0]++;
     alphabet[T[n - 1]]++;
+    container->M[T[n - 1] + 1]++;
+    container->NL[T[n - 1] + 1]++;
+    container->C[0]++;
     container->k++;
 
     /* scan the input string from right to left and save the S* substrings */
@@ -189,6 +207,7 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
             alphabet[val]++;
             container->k++;
         }
+        container->M[val + 1]++;
 
         // check if character is TYPE_S
         if (T[i] < T[i + 1])
@@ -202,9 +221,8 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
             if (previous_type == TYPE_S)
             {
                 p = i + 1;
-
+                container->C[T[p] + 1]++;
                 container->num_of_substrings++;
-                container->c_substr_counts[T[p]]++;
 
                 // insert unique substrings into hashtable
                 if (container->hashtable->insert_string(q - p + 1, &T[p]))
@@ -214,6 +232,12 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
             }
 
             previous_type = TYPE_L;
+            container->NL[val + 1]++;
+        }
+        else
+        { // same as previous character
+            if (previous_type == TYPE_L)
+                container->NL[val + 1]++;
         }
 
         if (i == 0)
@@ -313,10 +337,11 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     // add the head substring T[0..p] and last S* substring T[n] --> needed for BWT
     r = &container->hashtable->buf[pos];
     s[container->num_of_unique_substrings + 1] = r;
-    *r = T[0] + 1;
     container->hashtable->set_length(r, container->head_string_end + 1);
     container->hashtable->set_name(r, container->num_of_unique_substrings + 1);
-    r = container->hashtable->get_first_character_pointer(r);
+    r += 1 + container->hashtable->get_lenlen(r);
+    *r++ = T[0] + 1;
+    container->lastptr = r;
     for (i = 0; i < container->head_string_end + 1; i++)
     {
         *r++ = T[i];
@@ -326,8 +351,9 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     // add the last S* substring
     s[0] = r;
     container->hashtable->set_length(r, 1);
-    *r = 0;
-    r += 1 + 1 + 1 + 1;
+    r += 1 + 1;
+    *r++ = 0;
+    r += 1;
     for (uint8_t i = 0; i < container->hashtable->NAME_BYTES; i++)
         *r++ = 0;
 
@@ -348,7 +374,7 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     // also store the maximum value that will be user later --> needed for SA memory allocation
     container->bwp_base = container->min_ptr - 1;
     l = container->hashtable->get_length(container->max_ptr);
-    container->sa_max_value = container->hashtable->get_first_character_pointer(container->max_ptr) + l - 1 - container->bwp_base; 
+    container->sa_max_value = container->hashtable->get_first_character_pointer(container->max_ptr) + l - 1 - container->bwp_base;
 
     return s;
 }
