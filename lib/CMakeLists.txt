@@ -1,4 +1,10 @@
 #----------------------------------------------------------------------------
 # Add all subdirectories containing external libraries
 #----------------------------------------------------------------------------
-add_subdirectory(sdsl)
+
+if (BUILD_TESTS)
+
+set(INSTALL_GTEST OFF)
+add_subdirectory(googletest)
+
+endif()
