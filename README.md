@@ -67,3 +67,4 @@ To run single unit test, use the following command inside the tests folder.
 ## Credits
 * Kunihiko Sadakane
 * Yuta Mori
+* https://github.com/josator/gnu-bwt-aligner
