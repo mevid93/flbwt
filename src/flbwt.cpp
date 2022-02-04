@@ -154,11 +154,10 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     free(S);
     delete T1;
 
-    // create BWT for the original input string T
+    // create BWT for the original input string T (SA is deleted in this function)
     flbwt::BWT_result *BWT = flbwt::induce_bwt(SA, container);
 
     delete container;
-    delete SA;
 
     return BWT;
 }

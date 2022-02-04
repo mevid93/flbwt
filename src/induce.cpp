@@ -50,6 +50,9 @@ flbwt::BWT_result *flbwt::induce_bwt(flbwt::PackedArray *SA, flbwt::Container *c
         }
     }
 
+    // delete SA --> big performance boost (extra heap becomes available for next allocation)
+    delete SA;
+
     // allocate memory for bwt
     uint8_t *BWT = new uint8_t[container->n + 1];
     std::fill_n(BWT, container->n + 1, 0);
