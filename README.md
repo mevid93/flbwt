@@ -51,9 +51,9 @@ make
 
 
 ## How to run tests?
-Navigate inside the tests folder (inside the build folder).
+Navigate inside the test folder (inside the build folder).
 ```console
-cd ../flbwt/build/tests
+cd ../flbwt/build/test
 ```
 To run all unit tests, use the following command inside the tests folder.
 ```console
