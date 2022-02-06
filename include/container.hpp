@@ -23,7 +23,6 @@ public:
     uint64_t num_of_substrings;            // number of all substrings
     uint64_t num_of_unique_substrings;     // number of unique substrings
     uint64_t n;                            // length of the input string
-    uint64_t k;                            // alphabet size
     uint64_t head_string_end;              // index of the last character of the head string T[0...p]
     uint8_t *min_ptr;                      
     uint8_t *max_ptr;                      
@@ -35,7 +34,7 @@ public:
     /**
      * @brief Construct a new Container object.
      */
-    Container();
+    Container(uint64_t n);
 
     /**
      * @brief Destroy the Container object.

@@ -38,11 +38,11 @@ flbwt::BWT_result *bwt_string(uint8_t *T, const uint64_t n, bool free_T);
  * However, the last S* substring T(n) will be ignored.
  * 
  * @param T input string
- * @param n length of the input string
+ * @param n length of the input string (const reference)
  * @param k alphabet size
  * @return container
  */
-flbwt::Container *extract_LMS_strings(uint8_t *T, const uint64_t n);
+flbwt::Container *extract_LMS_strings(uint8_t *T, const uint64_t &n);
 
 /**
  * @brief Function for sorting LMS substrings. 

@@ -5,7 +5,7 @@
 #include "utility.hpp"
 #include "sais.hpp"
 
-// algorithm 1 from the research paper (modified induced sorting)
+// algorithm 1 from the research paper (simplified version)
 flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T);
 
 // allocate memory for the suffix array
@@ -35,7 +35,7 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
         throw std::runtime_error("T* malloc failed(): Could not allocate memory");
     }
 
-    fread(T, 1, n, fp);
+    (void)fread(T, 1, n, fp);
     fclose(fp);
 
     // input string should end with '\0' --> so the following assignment is ok
@@ -112,10 +112,10 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     // decompose the input string into S* substrings
     flbwt::Container *container = flbwt::extract_LMS_strings(T, n);
 
-    // sort the S*substrings and name them
+    // sort the S*substrings and assign names to them
     uint8_t **S = flbwt::sort_LMS_strings(T, container);
 
-    // get new shortened string T1
+    // get new shortened string
     flbwt::PackedArray *T1 = flbwt::create_shortened_string(T, n, container);
 
     // release T if user allows it --> lower memory usage
@@ -165,48 +165,34 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 #define TYPE_L 1
 #define TYPE_S 0
 
-flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
+flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t &n)
 {
-    /* Initialize the result data structure */
-    flbwt::Container *container = new Container();
-    container->n = n;
-    container->k = 0;
+    // Initialize the result data structure
+    flbwt::Container *container = new Container(n);
 
-    /* if T is trivial, then return the result immediately */
+    // If T is trivial, then return the result immediately
     if (n <= 2)
         return container;
 
-    /* initialize hash table where unique substrings are stored */
+    // Initialize hash table where unique substrings are stored
     container->hashtable = new HashTable(67777, n);
 
-    /* 
-    The first S* substring is at location T[n] but it is ignored here.
-    The next to last character is always of TYPE_L.
-    Each S* substring in T can be denoted as T[p...q].
-    */
-    int previous_type = TYPE_L;  // type of the previous character
-    uint8_t alphabet[256] = {0}; // alphabet counting array
-    uint64_t p;                  // starting position of S* substring
-    uint64_t q = n;              // ending position of S* substring
-    alphabet[0]++;
-    container->M[0]++;
-    alphabet[T[n - 1]]++;
-    container->M[T[n - 1] + 1]++;
-    container->NL[T[n - 1] + 1]++;
-    container->C[0]++;
-    container->k++;
+    // The first S* substring is at location T[n] but it is ignored here.
+    // The next to last character is always of TYPE_L.
+    // Each S* substring in T can be denoted as T[p...q].
+    int previous_type = TYPE_L;
+    uint64_t p = 0;
+    uint64_t q = n;
+    ++container->M[0];
+    ++container->M[T[n - 1] + 1];
+    ++container->NL[T[n - 1] + 1];
+    ++container->C[0];
 
     /* scan the input string from right to left and save the S* substrings */
-    for (uint64_t i = n - 2; i >= 0; i--)
+    for (int64_t i = n - 2; i >= 0; i--)
     {
         // count alphabet size
-        uint8_t val = T[i];
-        if (alphabet[val] == 0)
-        {
-            alphabet[val]++;
-            container->k++;
-        }
-        container->M[val + 1]++;
+        ++container->M[T[i] + 1];
 
         // check if character is TYPE_S
         if (T[i] < T[i + 1])
@@ -220,33 +206,29 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
             if (previous_type == TYPE_S)
             {
                 p = i + 1;
-                container->C[T[p] + 1]++;
-                container->num_of_substrings++;
+                ++container->C[T[p] + 1];
+                ++container->num_of_substrings;
 
                 // insert unique substrings into hashtable
                 if (container->hashtable->insert_string(q - p + 1, &T[p]))
-                    container->num_of_unique_substrings++;
+                    ++container->num_of_unique_substrings;
 
                 q = p;
             }
 
             previous_type = TYPE_L;
-            container->NL[val + 1]++;
+            ++container->NL[T[i] + 1];
         }
         else
         { // same as previous character
             if (previous_type == TYPE_L)
-                container->NL[val + 1]++;
+                ++container->NL[T[i] + 1];
         }
-
-        if (i == 0)
-            break; // to prevent integer underflow
     }
 
     // save the ending position of head strign
     container->head_string_end = p;
 
-    // all done, return the results
     return container;
 }
 
@@ -261,7 +243,7 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     // allocate memory for head string and ending substring
     p = container->head_string_end;
     uint64_t bufsize = container->hashtable->bufsize;
-    uint64_t space_required = 1 + 1 + container->hashtable->calculate_lenlen(p + 1) + (p + 1) + container->hashtable->NAME_BYTES;
+    uint64_t space_required = 1 + 1 + container->hashtable->lenlen(p + 1) + (p + 1) + container->hashtable->NAME_BYTES;
     space_required += 1 + 1 + 1 + 1 + container->hashtable->NAME_BYTES;
     r = (uint8_t *)realloc(container->hashtable->buf, container->hashtable->bufsize + space_required);
     if (r != container->hashtable->buf)
@@ -286,7 +268,9 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
                 continue;
             }
             s[j++] = q;
-            p += container->hashtable->string_info_length(r, l);
+            p += *r; // bytes
+            p += 2; // x bytes and sentinel
+            p += l + container->hashtable->NAME_BYTES;
         }
     }
 
@@ -336,9 +320,10 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     // add the head substring T[0..p] and last S* substring T[n] --> needed for BWT
     r = &container->hashtable->buf[pos];
     s[container->num_of_unique_substrings + 1] = r;
-    container->hashtable->set_length(r, container->head_string_end + 1);
+    uint8_t bytes = flbwt::HashTable::lenlen(container->head_string_end + 1);
+    container->hashtable->set_length(r, bytes, container->head_string_end + 1);
     container->hashtable->set_name(r, container->num_of_unique_substrings + 1);
-    r += 1 + container->hashtable->get_lenlen(r);
+    r += 1 + *r;
     *r++ = T[0] + 1;
     container->lastptr = r;
     for (i = 0; i < container->head_string_end + 1; i++)
@@ -349,7 +334,7 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
 
     // add the last S* substring
     s[0] = r;
-    container->hashtable->set_length(r, 1);
+    container->hashtable->set_length(r, 1, 1);
     r += 1 + 1;
     *r++ = 0;
     r += 1;
@@ -397,7 +382,7 @@ flbwt::PackedArray *flbwt::create_shortened_string(uint8_t *T, const uint64_t n,
     j--;
 
     // scan the input string from right to left and save the S* substrings
-    for (uint64_t i = n - 2; i >= 0; i--)
+    for (int64_t i = n - 2; i >= 0; i--)
     {
         // check if character is TYPE_S
         if (T[i] < T[i + 1])
@@ -424,9 +409,6 @@ flbwt::PackedArray *flbwt::create_shortened_string(uint8_t *T, const uint64_t n,
 
             previous_type = TYPE_L;
         }
-
-        if (i == 0)
-            break; // to prevent integer underflow
     }
 
     T1->set_value(0, max_name);
