@@ -45,7 +45,7 @@ cd build
 ```
 3. Use the following commands to build the project. In case you do not wish to build tests, you can leave out the "-DBUILD_TESTS=ON" option.
 ```console
-cmake -DBUILD_TESTS=ON ..
+cmake -DBUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release ..
 make
 ```
 
