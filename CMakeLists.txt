@@ -7,8 +7,12 @@ cmake_minimum_required(VERSION 3.5)
 # set the project name
 project(flbwt)
 
-# enable debug information and all warnings
-set(CMAKE_CXX_FLAGS "-g -Wall")
+# build options (release or debug)
+if (CMAKE_BUILD_TYPE MATCHES RELEASE)
+    set(CMAKE_CXX_FLAGS "-O9")
+else()
+    set(CMAKE_CXX_FLAGS "-g -Wall")
+endif()
 
 # set cpp standard
 set(CMAKE_CXX_STANDARD 11)
