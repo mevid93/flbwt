@@ -12,10 +12,12 @@ flbwt::PackedArray::PackedArray(uint64_t length, uint64_t max_integer, bool supp
     this->arr = (uint8_t**)malloc(8 * sizeof(uint8_t*));
     uint8_t index = 0;
     this->integer_bits = 0;
+    this->allocated_arrays = 0;
     while(max_integer != 0)
     {
         this->integer_bits += 8;
         this->arr[index++] = (uint8_t *)malloc(length * sizeof(uint8_t));
+        ++this->allocated_arrays;
         max_integer >>= 8;
     }
 
@@ -134,9 +136,8 @@ void flbwt::PackedArray::reallocate(uint64_t length)
     this->length = length;
 
     // release memory from the main array
-    int8_t arr_idx = this->integer_bits / 8 - 1;
-    for (int8_t i = arr_idx; i--; )
-        this->arr[arr_idx] = (uint8_t *)realloc(this->arr[arr_idx], length * sizeof(uint8_t));
+    for (int8_t i = 0; i < this->allocated_arrays; i++)
+        this->arr[i] = (uint8_t *)realloc(this->arr[i], length * sizeof(uint8_t));
 
     if (this->signs == NULL)
         return;
@@ -150,8 +151,7 @@ void flbwt::PackedArray::reallocate(uint64_t length)
 
 flbwt::PackedArray::~PackedArray()
 {
-    int8_t arr_idx = this->integer_bits / 8 - 1;
-    for (int8_t i = arr_idx; i--; )
+    for (int8_t i = 0; i < this->allocated_arrays; i++)
         free(this->arr[i]);
     free(this->arr);
     if (this->signs != NULL)

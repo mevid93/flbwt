@@ -96,6 +96,7 @@ public:
 
 private:
     uint8_t **arr;              // array (of arrays) where the integers are packed (without sign bit)
+    uint8_t allocated_arrays;   // number of allocated subarrays
     uint64_t *signs;            // array where the sign bit is set
     uint64_t length;            // length of the packed array
     uint8_t integer_bits;       // number of bits for single integer
