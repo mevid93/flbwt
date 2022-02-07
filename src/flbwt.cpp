@@ -5,23 +5,33 @@
 #include "utility.hpp"
 #include "sais.hpp"
 
-// algorithm 1 from the research paper (modified induced sorting)
+/**
+ * @brief Algorithm 1 from the research paper (simplified version).
+ * 
+ * @param T input string
+ * @param n input string length
+ * @param free_T should the input string be freed
+ * @return flbwt::BWT_result* result
+ */
 flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T);
 
-// allocate memory for the suffix array
+/**
+ * @brief Create a empty suffix array object.
+ * 
+ * @param container container object
+ * @return flbwt::PackedArray* empty suffic array
+ */
 flbwt::PackedArray *create_empty_suffix_array(flbwt::Container *container);
 
 void flbwt::bwt_file(const char *input_filename, const char *output_filename)
 {
-    /* read content from the input file */
-    FILE *fp = fopen(input_filename, "r"); // file stream (input & output)
+    // Read content from the input file
+    FILE *fp = fopen(input_filename, "r"); // file I/O stream
     uint64_t n;                            // length of the file content
     uint8_t *T;                            // file content string
 
     if (fp == NULL)
-    {
         throw std::invalid_argument("fopen failed(): Could not open input file");
-    }
 
     fseek(fp, 0L, SEEK_END);
     n = ftell(fp);
@@ -35,27 +45,25 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
         throw std::runtime_error("T* malloc failed(): Could not allocate memory");
     }
 
-    fread(T, 1, n, fp);
+    if (fread(T, 1, n, fp) <= 0)
+        throw std::runtime_error("fread failed(): Could not read input file");
     fclose(fp);
 
-    // input string should end with '\0' --> so the following assignment is ok
-    // if this is not done, valgrind gives warnings
+    // Input string should end with '\0' --> so the following assignment is ok.
     T[n] = '\0';
 
-    /* construct the bwt */
+    // Construct the bwt for input string
     flbwt::BWT_result *B = flbwt::bwt_string(T, n, true);
 
-    /* write the bwt to the output file */
+    // Write the bwt to the output file */
     fp = fopen(output_filename, "wb");
 
     if (fp == NULL)
-    {
         throw std::invalid_argument("fopen failed(): Could not open output file");
-    }
 
     if (B != NULL && B->BWT != NULL)
     {
-        // write rank of the last character to the first 64 bits
+        // Write rank of the last character to the first 64 bits
         uint8_t *rank = new uint8_t[8];
         rank[0] = (0xff00000000000000 & B->last) >> 56;
         rank[1] = (0x00ff000000000000 & B->last) >> 48;
@@ -68,7 +76,7 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
         fwrite(rank, sizeof(uint8_t), 8, fp);
         delete[] rank;
 
-        // write other content
+        // Write other content (BWT)
         if (B->last == 0)
         {
             fwrite(B->BWT + 1, sizeof(uint8_t), n, fp);
@@ -86,6 +94,7 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
 
     fclose(fp);
 
+    // Release result resources
     if (B != NULL)
     {
         if (B->BWT != NULL)
@@ -96,20 +105,17 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
 
 flbwt::BWT_result *flbwt::bwt_string(uint8_t *T, const uint64_t n, bool free_T)
 {
-    // check that input string is not null and n is greater than 0
+    // Check that input string is not NULL and length is greater than 0
     if (T == NULL || n <= 0)
-    {
-        std::cout << "bwt_string() failed: Invalid parameters" << std::endl;
         throw std::invalid_argument("bwt_string failed(): Invalid parameters");
-    }
 
-    // call the bwt construction with induced sorting
+    // Call the bwt construction with induced sorting
     return bwt_is(T, n, free_T);
 }
 
 flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 {
-    // decompose the input string into S* substrings
+    // Decompose the input string into S* substrings
     flbwt::Container *container = flbwt::extract_LMS_strings(T, n);
 
     // sort the S*substrings and name them
@@ -167,86 +173,64 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 
 flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
 {
-    /* Initialize the result data structure */
-    flbwt::Container *container = new Container();
-    container->n = n;
-    container->k = 0;
+    // Initialize the result data structure
+    flbwt::Container *container = new Container(n);
 
-    /* if T is trivial, then return the result immediately */
+    // If T is trivial, then return the result immediately
     if (n <= 2)
         return container;
 
-    /* initialize hash table where unique substrings are stored */
+    // Initialize hash table where unique substrings are stored
     container->hashtable = new HashTable(67777, n);
 
-    /* 
-    The first S* substring is at location T[n] but it is ignored here.
-    The next to last character is always of TYPE_L.
-    Each S* substring in T can be denoted as T[p...q].
-    */
-    int previous_type = TYPE_L;  // type of the previous character
-    uint8_t alphabet[256] = {0}; // alphabet counting array
-    uint64_t p;                  // starting position of S* substring
-    uint64_t q = n;              // ending position of S* substring
-    alphabet[0]++;
-    container->M[0]++;
-    alphabet[T[n - 1]]++;
-    container->M[T[n - 1] + 1]++;
-    container->NL[T[n - 1] + 1]++;
-    container->C[0]++;
-    container->k++;
+    // The first S* substring is at location T[n] but it is ignored here.
+    // The next to last character is always of TYPE_L.
+    // Each S* substring in T can be denoted as T[p...q].
+    int previous_type = TYPE_L;
+    uint64_t p = 0;
+    uint64_t q = n;
+    ++container->M[0];
+    ++container->M[T[n - 1] + 1];
+    ++container->NL[T[n - 1] + 1];
+    ++container->C[0];
 
-    /* scan the input string from right to left and save the S* substrings */
-    for (uint64_t i = n - 2; i >= 0; i--)
+    // Scan the input string from right to left and save the S* substrings
+    for (int64_t i = n - 2; i >= 0; i--)
     {
-        // count alphabet size
-        uint8_t val = T[i];
-        if (alphabet[val] == 0)
-        {
-            alphabet[val]++;
-            container->k++;
-        }
-        container->M[val + 1]++;
+        container->M[T[i] + 1]++;
 
-        // check if character is TYPE_S
         if (T[i] < T[i + 1])
-        {
+        { // Character is TYPE_S
             previous_type = TYPE_S;
         }
-        // check if character is TYPE_L
         else if (T[i] > T[i + 1])
-        {
-            // if previous character was TYPE_S, then new S* substring was found
+        { // Character is TYPE_L
             if (previous_type == TYPE_S)
-            {
+            { // If previous character was TYPE_S, then new S* substring was found
                 p = i + 1;
-                container->C[T[p] + 1]++;
-                container->num_of_substrings++;
+                ++container->C[T[p] + 1];
+                ++container->num_of_substrings;
 
                 // insert unique substrings into hashtable
                 if (container->hashtable->insert_string(q - p + 1, &T[p]))
-                    container->num_of_unique_substrings++;
+                    ++container->num_of_unique_substrings;
 
                 q = p;
             }
 
             previous_type = TYPE_L;
-            container->NL[val + 1]++;
+            ++container->NL[T[i] + 1];
         }
         else
-        { // same as previous character
+        { // Same as previous character
             if (previous_type == TYPE_L)
-                container->NL[val + 1]++;
+                ++container->NL[T[i] + 1];
         }
-
-        if (i == 0)
-            break; // to prevent integer underflow
     }
 
-    // save the ending position of head strign
+    // Save the ending position of head strign
     container->head_string_end = p;
 
-    // all done, return the results
     return container;
 }
 

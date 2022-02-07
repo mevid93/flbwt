@@ -13,7 +13,7 @@ static void get_counts(flbwt::PackedArray *T, uint64_t T_base, flbwt::PackedArra
     {
         uint64_t idx = T->get_value(T_base + i + 1);
         uint64_t old_count = C->get_value(C_base + idx);
-        C->set_value(C_base + idx, old_count + 1);   
+        C->set_value(C_base + idx, old_count + 1);
     }
 }
 
@@ -126,11 +126,11 @@ static void induce_SA(flbwt::PackedArray *T, uint64_t T_base, flbwt::PackedArray
 
 void flbwt::sais_main(flbwt::PackedArray *T, uint64_t T_base, flbwt::PackedArray *SA, uint64_t fs, uint64_t n, uint64_t k)
 {
-    flbwt::PackedArray *C;  // pointer to C-vector
-    flbwt::PackedArray *B;  // pointer to B-vector
-    flbwt::PackedArray *BC; // pointer to BC-vector
-    uint64_t C_base;        // start offset of C
-    uint64_t B_base;        // start offset of B
+    flbwt::PackedArray *C = NULL;  // pointer to C-vector
+    flbwt::PackedArray *B = NULL;  // pointer to B-vector
+    flbwt::PackedArray *BC = NULL; // pointer to BC-vector
+    uint64_t C_base;               // start offset of C
+    uint64_t B_base;               // start offset of B
     int64_t c;
     int64_t c0;
     int64_t c1;
@@ -323,7 +323,7 @@ void flbwt::sais_main(flbwt::PackedArray *T, uint64_t T_base, flbwt::PackedArray
     {
         C = B = SA;
         C_base = n;
-        B_base = (k <= (fs - k)) ? C_base + k: C_base;
+        B_base = (k <= (fs - k)) ? C_base + k : C_base;
     }
     else
     {
@@ -345,7 +345,7 @@ void flbwt::sais_main(flbwt::PackedArray *T, uint64_t T_base, flbwt::PackedArray
         SA->set_value(i, 0);
 
         int64_t index = T->get_value(T_base + j + 1);
-        int64_t value = B->get_value(B_base + index ) - 1;
+        int64_t value = B->get_value(B_base + index) - 1;
         B->set_value(B_base + index, value);
         SA->set_value(value, j);
     }
@@ -356,5 +356,4 @@ void flbwt::sais_main(flbwt::PackedArray *T, uint64_t T_base, flbwt::PackedArray
     {
         delete BC;
     }
-
 }
