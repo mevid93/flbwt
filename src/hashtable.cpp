@@ -30,8 +30,8 @@ uint8_t flbwt::HashTable::insert_string(const uint64_t m, uint8_t *p)
     uint64_t i;  // index of the substring
     uint64_t pp; // previous substring starting index
     uint64_t l;  // length of substring under comparison
-    uint8_t *r;
-    uint8_t *r2;
+    uint8_t *r = NULL;
+    uint8_t *r2 = NULL;
     uint8_t l2;
     uint64_t q2;
 
