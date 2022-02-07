@@ -72,7 +72,7 @@ public:
      * 
      * @return uint64_t* 
      */
-    uint64_t *get_raw_arr_pointer();
+    uint8_t **get_raw_arr_pointer();
 
     /**
      * @brief Get the pointer pointing to raw signs data.
@@ -95,13 +95,12 @@ public:
     ~PackedArray();
 
 private:
-    uint64_t *arr;              // array where the integers are packed (without sign bit)
+    uint8_t **arr;              // array (of arrays) where the integers are packed (without sign bit)
     uint64_t *signs;            // array where the sign bit is set
     uint64_t length;            // length of the packed array
     uint8_t integer_bits;       // number of bits for single integer
     uint64_t max_integer;       // max integer that can be stored to PackedArray
     bool negative_integers;     // should the array support negative integers
-    uint64_t arr_length;        // length of raw data of arr
     uint64_t signs_length;      // length of raw data of signs
 };
 
