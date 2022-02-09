@@ -123,7 +123,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 
     // get new shortened string T1
     flbwt::PackedArray *T1 = flbwt::create_shortened_string(T, n, container);
-
+    
     // release T if user allows it --> lower memory usage
     if (free_T)
     {
@@ -133,7 +133,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 
     // create a suffix array for T1
     flbwt::PackedArray *SA = create_empty_suffix_array(container);
-
+    
     // sort suffixes using induced sorting (SAIS)
     flbwt::sais_main(T1, 0, SA, 0, container->num_of_substrings + 1, container->num_of_unique_substrings + 2);
 
@@ -425,6 +425,8 @@ flbwt::PackedArray *create_empty_suffix_array(flbwt::Container *container)
 
     // maximum value that will be stored to SA in any point of the algorithm
     int64_t max_value = container->sa_max_value;
+    if (total_substring_count > (uint64_t)max_value)
+        max_value = total_substring_count;
 
     // create packed array
     flbwt::PackedArray *SA = new flbwt::PackedArray(total_substring_count, max_value, true);
