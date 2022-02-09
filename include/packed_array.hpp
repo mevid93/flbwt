@@ -2,6 +2,12 @@
 #define FLBWT_PACKED_ARRAY_HPP
 
 #include <stdint.h>
+#include <limits.h>
+
+// https://stackoverflow.com/questions/22899466/this-declaration-has-no-storage-class-or-type-specifier-in-c
+#define BIT_MASK(__TYPE__, __ONE_COUNT__) \
+    ((__TYPE__) (-((__ONE_COUNT__) != 0))) \
+    & (((__TYPE__) -1) >> ((sizeof(__TYPE__) * CHAR_BIT) - (__ONE_COUNT__)))
 
 namespace flbwt {
 
@@ -11,8 +17,6 @@ namespace flbwt {
 class PackedArray
 {
 public:
-    
-
     /**
      * @brief Construct a new PackedArray object
      * 
@@ -52,15 +56,15 @@ public:
     uint64_t get_maximum_supported_integer();
 
     /**
-     * @brief Set value of index in PackedArray.
+     * @brief Store value at index in PackedArray.
      * 
-     * @param index index of which value is set
-     * @param value value to bet set
+     * @param index index in PackedArray where value is stored
+     * @param value value to be stored
      */
     void set_value(uint64_t index, int64_t value);
 
     /**
-     * @brief Get the value at index.
+     * @brief Get value stored at index in PackedArray.
      * 
      * @param index index from which value is retrieved
      * @return int64_t value
