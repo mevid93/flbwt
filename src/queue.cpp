@@ -11,7 +11,6 @@ flbwt::Queue::Queue(uint8_t w)
     this->eb = NULL;
     this->s_ofs = 0;
     this->e_ofs = QSIZ - 1;
-    this->max_value = flbwt::max_integer(w);
 }
 
 flbwt::Queue::~Queue()
@@ -38,7 +37,7 @@ void flbwt::Queue::enqueue(uint64_t x)
     if (this->e_ofs == QSIZ - 1)
     { // current block is full
         qb = (qblock *)malloc(sizeof(qblock));
-        qb->b = new PackedArray(QSIZ, this->max_value, false);
+        qb->b = new PackedArray(QSIZ, false, this->w);
 
         if (this->eb == NULL)
         { // no blocks
@@ -68,7 +67,7 @@ void flbwt::Queue::enqueue_l(uint64_t x)
     if (this->s_ofs == 0)
     { // current block is full
         qb = (qblock *)malloc(sizeof(qblock));
-        qb->b = new PackedArray(QSIZ, this->max_value, false);
+        qb->b = new PackedArray(QSIZ, false, this->w);
 
         if (this->sb == NULL)
         { // no block exists

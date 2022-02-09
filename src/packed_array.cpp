@@ -6,9 +6,34 @@
 flbwt::PackedArray::PackedArray(uint64_t length, uint64_t max_integer, bool support_negative_integers)
 {
     this->length = length;
-    this->max_integer = max_integer;
     this->negative_integers = support_negative_integers;
     this->integer_bits = flbwt::position_of_msb(max_integer);
+
+    // Allocate space for integers (excluding sign bits)
+    uint64_t bits_required = length * this->integer_bits;
+    uint64_t arr_length = bits_required / 64 + 1;
+    this->arr = (uint64_t *)malloc(arr_length * sizeof(uint64_t));
+    this->arr_length = arr_length;
+
+    // If negative numbers supported, allocate space for sign bits
+    if (!this->negative_integers)
+    {
+        this->signs = NULL;
+        this->signs_length = 0;
+        return;
+    }
+
+    bits_required = length;
+    uint64_t signs_length = bits_required / 64 + 1;
+    this->signs = (uint64_t *)malloc(signs_length * sizeof(uint64_t));
+    this->signs_length = signs_length;
+}
+
+flbwt::PackedArray::PackedArray(uint64_t length, bool support_negative_integers, uint8_t integer_bits)
+{
+    this->length = length;
+    this->negative_integers = support_negative_integers;
+    this->integer_bits = integer_bits;
 
     // Allocate space for integers (excluding sign bits)
     uint64_t bits_required = length * this->integer_bits;
@@ -43,11 +68,6 @@ uint8_t flbwt::PackedArray::get_integer_bits()
 bool flbwt::PackedArray::supports_negative_integers()
 {
     return this->negative_integers;
-}
-
-uint64_t flbwt::PackedArray::get_maximum_supported_integer()
-{
-    return this->max_integer;
 }
 
 void flbwt::PackedArray::set_value(uint64_t index, int64_t value)

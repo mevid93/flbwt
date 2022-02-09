@@ -1,9 +1,11 @@
 #include <algorithm>
 #include <iostream>
+// #include <time.h>
 #include <stdlib.h>
 #include "flbwt.hpp"
 #include "utility.hpp"
 #include "sais.hpp"
+
 
 /**
  * @brief Algorithm 1 from the research paper (simplified version).
@@ -53,7 +55,10 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
     T[n] = '\0';
 
     // Construct the bwt for input string
+    // clock_t begin = clock();
     flbwt::BWT_result *B = flbwt::bwt_string(T, n, true);
+    // clock_t end = clock();
+    // std::cout << "Running time: " << ((double)(end - begin) / CLOCKS_PER_SEC) << std::endl;
 
     // Write the bwt to the output file */
     fp = fopen(output_filename, "wb");
