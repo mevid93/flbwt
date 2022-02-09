@@ -23,6 +23,15 @@ public:
     PackedArray(uint64_t length, uint64_t max_integer, bool support_negative_integers);
 
     /**
+     * @brief Construct a new PackedArray object
+     * 
+     * @param length length of the PackedArray
+     * @param support_negative_integers should the array support negative integers
+     * @param integer_bits bits used by single integer in PackedArray
+     */
+    PackedArray(uint64_t length, bool support_negative_integers, uint8_t integer_bits);
+
+    /**
      * @brief Get the length of the PackedArray.
      * 
      * @return uint64_t PackedArray length
@@ -43,13 +52,6 @@ public:
      * @return false PackedArray does not support negative numbers
      */
     bool supports_negative_integers();
-
-    /**
-     * @brief Get the maximum integer that can be stored to PackedArray.
-     * 
-     * @return uint64_t max integer
-     */
-    uint64_t get_maximum_supported_integer();
 
     /**
      * @brief Set value of index in PackedArray.
@@ -100,7 +102,6 @@ private:
     uint64_t *signs;            // array where the sign bit is set
     uint64_t length;            // length of the packed array
     uint8_t integer_bits;       // number of bits for single integer
-    uint64_t max_integer;       // max integer that can be stored to PackedArray
     bool negative_integers;     // should the array support negative integers
     uint64_t signs_length;      // length of raw data of signs
 };

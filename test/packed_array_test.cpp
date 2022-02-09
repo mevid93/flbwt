@@ -5,7 +5,6 @@ TEST(packed_array_test, packed_array_1)
 {
     flbwt::PackedArray *pa = new flbwt::PackedArray(10, 100, false);
     EXPECT_EQ(10U, pa->get_length());
-    EXPECT_EQ(100U, pa->get_maximum_supported_integer());
     EXPECT_EQ(false, pa->supports_negative_integers());
     EXPECT_EQ(8U, pa->get_integer_bits());
     EXPECT_TRUE(pa->get_raw_signs_pointer() == NULL);
@@ -18,7 +17,6 @@ TEST(packed_array_test, packed_array_2)
 
     flbwt::PackedArray *pa = new flbwt::PackedArray(100, 0xffffffffffffffff, true);
     EXPECT_EQ(100U, pa->get_length());
-    EXPECT_EQ(0xffffffffffffffffU, pa->get_maximum_supported_integer());
     EXPECT_EQ(true, pa->supports_negative_integers());
     EXPECT_EQ(64U, pa->get_integer_bits());
     EXPECT_TRUE(pa->get_raw_signs_pointer() != NULL);

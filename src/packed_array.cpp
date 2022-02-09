@@ -5,7 +5,6 @@
 flbwt::PackedArray::PackedArray(uint64_t length, uint64_t max_integer, bool support_negative_integers)
 {
     this->length = length;
-    this->max_integer = max_integer;
     this->negative_integers = support_negative_integers;
 
     // Determine bits for single integer (and allocate arrays)
@@ -38,6 +37,47 @@ flbwt::PackedArray::PackedArray(uint64_t length, uint64_t max_integer, bool supp
         this->signs[i] = 0;
 }
 
+flbwt::PackedArray::PackedArray(uint64_t length, bool support_negative_integers, uint8_t integer_bits)
+{
+    this->length = length;
+    this->negative_integers = support_negative_integers;
+
+    // Determine bits for single integer (and allocate arrays)
+    this->arr = (uint8_t **)malloc(8 * sizeof(uint8_t *));
+    uint8_t index = 0;
+    this->integer_bits = integer_bits;
+    this->allocated_arrays = 0;
+    while (integer_bits != 0)
+    {
+        this->arr[index++] = (uint8_t *)malloc(length * sizeof(uint8_t));
+        ++this->allocated_arrays;
+        if (integer_bits > 8)
+        {
+            integer_bits -= 8;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    // If negative numbers should be supported, allocate space for sign bits
+    if (!this->negative_integers)
+    {
+        this->signs = NULL;
+        this->signs_length = 0;
+        return;
+    }
+
+    uint64_t bits_required = length;
+    uint64_t signs_length = bits_required / 64 + 1;
+    this->signs = (uint64_t *)malloc(signs_length * sizeof(uint64_t));
+    this->signs_length = signs_length;
+
+    for (int64_t i = signs_length; i--;)
+        this->signs[i] = 0;
+}
+
 uint64_t flbwt::PackedArray::get_length()
 {
     return this->length;
@@ -51,11 +91,6 @@ uint8_t flbwt::PackedArray::get_integer_bits()
 bool flbwt::PackedArray::supports_negative_integers()
 {
     return this->negative_integers;
-}
-
-uint64_t flbwt::PackedArray::get_maximum_supported_integer()
-{
-    return this->max_integer;
 }
 
 void flbwt::PackedArray::set_value(uint64_t index, int64_t value)

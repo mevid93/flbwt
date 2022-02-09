@@ -68,7 +68,6 @@ private:
     flbwt::qblock *eb;
     uint64_t s_ofs; // 0 <= s_ofs
     uint64_t e_ofs; // e_ofs < QSIZ
-    uint64_t max_value;  // max unsigned integer that can be stored
 };
 
 }

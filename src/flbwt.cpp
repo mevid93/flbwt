@@ -54,12 +54,10 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
     T[n] = '\0';
 
     // Construct the bwt for input string
-    std::clock_t start;
-    double duration;
-    start = std::clock();
+    std::clock_t start = std::clock();
     flbwt::BWT_result *B = flbwt::bwt_string(T, n, true);
-    duration = ( std::clock() - start ) / (double) CLOCKS_PER_SEC;
-    std::cout << "Duration: " << duration << "s" << std::endl;
+    std::clock_t end = std::clock();
+    std::cout << "Running time: " << ( end - start ) / (double) CLOCKS_PER_SEC << std::endl;
 
     // Write the bwt to the output file */
     fp = fopen(output_filename, "wb");
@@ -431,6 +429,8 @@ flbwt::PackedArray *create_empty_suffix_array(flbwt::Container *container)
 
     // maximum value that will be stored to SA in any point of the algorithm
     int64_t max_value = container->sa_max_value;
+    if (total_substring_count > (uint64_t)max_value)
+        max_value = total_substring_count;
 
     // create packed array
     flbwt::PackedArray *SA = new flbwt::PackedArray(total_substring_count, max_value, true);
