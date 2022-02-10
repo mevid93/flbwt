@@ -164,26 +164,6 @@ uint64_t *flbwt::PackedArray::get_raw_signs_pointer()
     return this->signs;
 }
 
-void flbwt::PackedArray::reallocate(uint64_t length)
-{
-    this->length = length;
-
-    // Release memory from the main array
-    uint64_t bits_required = length * this->integer_bits;
-    uint64_t arr_length = bits_required / 64 + 1;
-    this->arr = (uint64_t *)realloc(this->arr, arr_length * sizeof(uint64_t));
-    this->arr_length = arr_length;
-
-    if (this->signs == NULL)
-        return;
-
-    // Release memory from the supporting sign array
-    bits_required = length;
-    uint64_t signs_length = bits_required / 64 + 1;
-    this->signs = (uint64_t *)realloc(this->signs, signs_length * sizeof(uint64_t));
-    this->signs_length = signs_length;
-}
-
 flbwt::PackedArray::~PackedArray()
 {
     free(this->arr);
