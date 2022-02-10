@@ -442,24 +442,6 @@ TEST(packed_array_test, get_value_64bit_1)
     delete pa;
 }
 
-TEST(packed_array_test, reallocate_1)
-{
-    flbwt::PackedArray *pa = new flbwt::PackedArray(30, 7343373, false);
-    EXPECT_EQ(30U, pa->get_length());
-    pa->reallocate(15);
-    EXPECT_EQ(15U, pa->get_length());
-    delete pa;
-}
-
-TEST(packed_array_test, reallocate_2)
-{
-    flbwt::PackedArray *pa = new flbwt::PackedArray(30, 734, true);
-    EXPECT_EQ(30U, pa->get_length());
-    pa->reallocate(17);
-    EXPECT_EQ(17U, pa->get_length());
-    delete pa;
-}
-
 TEST(packed_array_test, extra_test_1)
 {
     // pack and retrieve signed integers (24-bits excluding sign bit)

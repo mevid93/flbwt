@@ -42,12 +42,6 @@ flbwt::BWT_result *flbwt::induce_bwt(flbwt::PackedArray *SA, flbwt::Container *c
         }
 
         Q[TYPE_LMS][c + 1]->enqueue_l(q - bwp_base);
-
-        if (i % 1024 == 0)
-        {
-            // reallocate --> release space that is no more needed
-            SA->reallocate(i);
-        }
     }
 
     // delete SA --> big performance boost (extra heap becomes available for next allocation)
