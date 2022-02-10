@@ -9,7 +9,7 @@ project(flbwt)
 
 # build options (release or debug)
 if (CMAKE_BUILD_TYPE MATCHES RELEASE)
-    set(CMAKE_CXX_FLAGS "-O9")
+    set(CMAKE_CXX_FLAGS "-O3")
 else()
     set(CMAKE_CXX_FLAGS "-g -Wall")
 endif()

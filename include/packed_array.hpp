@@ -84,14 +84,6 @@ public:
     uint64_t *get_raw_signs_pointer();
 
     /**
-     * @brief Reallocate memory by releasing space that is no longer needed.
-     * This function can only be called when space is reduced.
-     * 
-     * @param length number of elements after reallocation
-     */
-    void reallocate(uint64_t length);
-
-    /**
      * @brief Destroy the PackedArray object
      */
     ~PackedArray();
