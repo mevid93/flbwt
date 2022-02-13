@@ -192,7 +192,7 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
     // The next to last character is always of TYPE_L.
     // Each S* substring in T can be denoted as T[p...q].
     int previous_type = TYPE_L;
-    uint64_t p = 0;
+    uint64_t p = n;
     uint64_t q = n;
     ++container->M[0];
     ++container->M[T[n - 1] + 1];
