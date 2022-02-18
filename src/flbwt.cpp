@@ -1,11 +1,12 @@
 #include <algorithm>
 #include <iostream>
-// #include <time.h>
+#include <time.h>
 #include <stdlib.h>
 #include "flbwt.hpp"
 #include "utility.hpp"
-#include "sais.hpp"
-
+#include "induce40bit.hpp"
+#include "sais32bit.hpp"
+#include "sais40bit.hpp"
 
 /**
  * @brief Algorithm 1 from the research paper (simplified version).
@@ -16,14 +17,6 @@
  * @return flbwt::BWT_result* result
  */
 flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T);
-
-/**
- * @brief Create a empty suffix array object.
- * 
- * @param container container object
- * @return flbwt::PackedArray* empty suffic array
- */
-flbwt::PackedArray *create_empty_suffix_array(flbwt::Container *container);
 
 void flbwt::bwt_file(const char *input_filename, const char *output_filename)
 {
@@ -55,10 +48,10 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
     T[n] = '\0';
 
     // Construct the bwt for input string
-    // clock_t begin = clock();
+    clock_t begin = clock();
     flbwt::BWT_result *B = flbwt::bwt_string(T, n, true);
-    // clock_t end = clock();
-    // std::cout << "Running time: " << ((double)(end - begin) / CLOCKS_PER_SEC) << std::endl;
+    clock_t end = clock();
+    std::cout << "Running time: " << ((double)(end - begin) / CLOCKS_PER_SEC) << std::endl;
 
     // Write the bwt to the output file */
     fp = fopen(output_filename, "wb");
@@ -128,7 +121,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 
     // get new shortened string T1
     flbwt::PackedArray *T1 = flbwt::create_shortened_string(T, n, container);
-    
+
     // release T if user allows it --> lower memory usage
     if (free_T)
     {
@@ -136,40 +129,102 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
         T = NULL;
     }
 
-    // create a suffix array for T1
-    flbwt::PackedArray *SA = create_empty_suffix_array(container);
-    
-    // sort suffixes using induced sorting (SAIS)
-    flbwt::sais_main(T1, 0, SA, 0, container->num_of_substrings + 1, container->num_of_unique_substrings + 2);
+    // Create a suffix array for T1
+    // Arrays of different sizes are used to store the SA
+    int8_t *SA_8bit = NULL;
+    int16_t *SA_16bit = NULL;
+    int32_t *SA_32bit = NULL;
+    int64_t *SA_64bit = NULL;
+    uint32_t *SA_u32bit = NULL;
+    uint16_t *SA_u16bit = NULL;
 
-    // create bwt for T1?
-    for (uint64_t i = 0; i < container->num_of_substrings + 1; i++)
-    {
-        uint64_t val = SA->get_value(i);
-        SA->set_value(i, val + 1);
+    uint64_t total_substring_count = container->num_of_substrings + 2;
+    uint64_t max_value = container->sa_max_value;
+    if (total_substring_count > max_value)
+        max_value = total_substring_count;
+
+    uint8_t bits = flbwt::position_of_msb(max_value);
+    uint64_t T1_length = container->num_of_substrings + 1;
+    uint64_t k = container->num_of_unique_substrings + 2;
+
+    flbwt::BWT_result *BWT = NULL;
+
+    uint64_t l;
+    uint8_t *q;
+    uint64_t p;
+
+    if (bits < 32U)
+    { // SA can be stored into array of 32 bit integers
+
+        // Compute SA
+        SA_32bit = new int32_t[total_substring_count];
+        flbwt::sais_32bit((uint8_t *)T1->get_raw_arr_pointer(), SA_32bit, 0, T1_length, k, T1->get_integer_bits());
+
+        // Compute BWT for shortened string
+        for (uint64_t i = 0; i < container->num_of_substrings + 1; ++i)
+            ++SA_32bit[i];
+
+        for (uint64_t i = 0; i < container->num_of_substrings + 1; i++)
+        {
+            p = SA_32bit[i];
+            q = S[T1->get_value(p - 1)];
+            l = container->hashtable->get_length(q);
+            uint64_t value = container->hashtable->get_first_character_pointer(q) + l - 1 - container->bwp_base;
+            SA_32bit[i] = value;
+        }
+
+        // Release resources that are no longer needed
+        free(S);
+        delete T1;
+
+        // create BWT for the original input string T (SA_32bit is deleted in this function)
+        BWT = flbwt::induce_bwt_32bit(SA_32bit, container);
     }
+    else if (bits < 40U)
+    { // SA can be stored into two integer arrays (32 + 8 bits)
 
-    for (uint64_t i = 0; i < container->num_of_substrings + 1; i++)
-    {
-        uint64_t l;
-        uint8_t *q;
-        uint64_t p;
-        p = SA->get_value(i);
-        q = S[T1->get_value(p - 1)];
-        l = container->hashtable->get_length(q);
-        uint64_t value = container->hashtable->get_first_character_pointer(q) + l - 1 - container->bwp_base;
-        SA->set_value(i, value);
+        // Compute SA
+        SA_u32bit = new uint32_t[total_substring_count]; // first 32 bits
+        SA_8bit = new int8_t[total_substring_count];     // 8 most significant bits
+        flbwt::sais_40bit((uint8_t *)T1->get_raw_arr_pointer(), NULL, NULL, SA_u32bit, SA_8bit, 0, T1_length, k, T1->get_integer_bits());
+
+        // Compute BWT for shortened string
+        for (uint64_t i = 0; i < container->num_of_substrings + 1; ++i)
+        {
+            int64_t tmp = flbwt::get_40bit_value(SA_u32bit, SA_8bit, i);
+            flbwt::set_40bit_value(SA_u32bit, SA_8bit, i, tmp + 1);
+        }
+
+        for (uint64_t i = 0; i < container->num_of_substrings + 1; i++)
+        {
+            p = flbwt::get_40bit_value(SA_u32bit, SA_8bit, i);
+            q = S[T1->get_value(p - 1)];
+            l = container->hashtable->get_length(q);
+            uint64_t value = container->hashtable->get_first_character_pointer(q) + l - 1 - container->bwp_base;
+            flbwt::set_40bit_value(SA_u32bit, SA_8bit, i, value);
+        }
+
+        // Release resources that are no longer needed
+        free(S);
+        delete T1;
+
+        // create BWT for the original input string T (SA_u32bit and SA_8bit are deleted in this function)
+        BWT = flbwt::induce_bwt_40bit(SA_u32bit, SA_8bit, container);
     }
-
-    // release resources that are no longer needed
-    free(S);
-    delete T1;
-
-    // create BWT for the original input string T (SA is deleted in this function)
-    flbwt::BWT_result *BWT = flbwt::induce_bwt(SA, container);
+    else if (bits < 48U)
+    { // SA can be stored into two integer arrays (32 + 16 bits)
+        throw new std::runtime_error("SUPPORT FOR 2^40+ BIT FILES NOT IMPLEMENTED YET!");
+    }
+    else if (bits < 56U)
+    { // SA can be stored into three integer arrays (32 + 16 + 8bits)
+        throw new std::runtime_error("SUPPORT FOR 2^48+ BIT FILES NOT IMPLEMENTED YET!");
+    }
+    else if (bits < 64)
+    { // SA can be stored into array of 64 bit integers
+        throw new std::runtime_error("SUPPORT FOR 2^56+ BIT FILES NOT IMPLEMENTED YET!");
+    }
 
     delete container;
-
     return BWT;
 }
 
@@ -374,8 +429,9 @@ flbwt::PackedArray *flbwt::create_shortened_string(uint8_t *T, const uint64_t n,
 
     // maximum name of any substring
     uint64_t max_name = container->num_of_unique_substrings + 1;
+    uint8_t bits = flbwt::position_of_msb(max_name);
     // number of bits required to store a name
-    PackedArray *T1 = new PackedArray(total_substring_count, max_name, false);
+    PackedArray *T1 = new PackedArray(total_substring_count, bits);
 
     int previous_type = TYPE_L; // type of the previous character
     uint64_t p;                 // starting position of S* substring
@@ -421,20 +477,4 @@ flbwt::PackedArray *flbwt::create_shortened_string(uint8_t *T, const uint64_t n,
     T1->set_value(0, max_name);
 
     return T1;
-}
-
-flbwt::PackedArray *create_empty_suffix_array(flbwt::Container *container)
-{
-    // how many substrings there are in total
-    uint64_t total_substring_count = container->num_of_substrings + 2;
-
-    // maximum value that will be stored to SA in any point of the algorithm
-    int64_t max_value = container->sa_max_value;
-    if (total_substring_count > (uint64_t)max_value)
-        max_value = total_substring_count;
-
-    // create packed array
-    flbwt::PackedArray *SA = new flbwt::PackedArray(total_substring_count, max_value, true);
-
-    return SA;
 }
