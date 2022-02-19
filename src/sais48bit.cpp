@@ -1,6 +1,6 @@
 #include <iostream>
 #include <stddef.h>
-#include "sais40bit.hpp"
+#include "sais48bit.hpp"
 #include "utility.hpp"
 
 /**
@@ -34,13 +34,13 @@ static uint64_t get2(uint64_t *B, uint64_t i, uint8_t d)
     return abs_value;
 }
 
-#define chr(i) ((cs == 40) ? ((int64_t)TA_U[i] << 32 | TA_L[i]) : (get2((uint64_t *)T, i + 1, cs)))
+#define chr(i) ((cs == 48) ? ((int64_t)TA_U[i] << 32 | TA_L[i]) : (get2((uint64_t *)T, i + 1, cs)))
 
 /**
  * @brief Get the count of each character in the input string.
  */
-static void get_counts(const uint8_t *T, const uint32_t *TA_L, const int8_t *TA_U,
-                       uint32_t *C_L, int8_t *C_U, uint64_t n, uint64_t k, uint8_t cs)
+static void get_counts(const uint8_t *T, const uint32_t *TA_L, const int16_t *TA_U,
+                       uint32_t *C_L, int16_t *C_U, uint64_t n, uint64_t k, uint8_t cs)
 {
     for (uint64_t i = 0; i < k; ++i)
         C_L[i] = C_U[i] = 0;
@@ -57,7 +57,7 @@ static void get_counts(const uint8_t *T, const uint32_t *TA_L, const int8_t *TA_
 /**
  * @brief Find the start or end of each bucket.
  */
-static void get_buckets(const uint32_t *C_L, const int8_t *C_U, uint32_t *B_L, int8_t *B_U, uint64_t k, bool end)
+static void get_buckets(const uint32_t *C_L, const int16_t *C_U, uint32_t *B_L, int16_t *B_U, uint64_t k, bool end)
 {
     uint64_t sum = 0;
 
@@ -88,14 +88,14 @@ static void get_buckets(const uint32_t *C_L, const int8_t *C_U, uint32_t *B_L, i
 /**
  * @brief Induce SA.
  */
-static void induce_SA(const uint8_t *T, const uint32_t *TA_L, const int8_t *TA_U, uint32_t *SA_L, int8_t *SA_U,
-                      uint32_t *C_L, int8_t *C_U, uint32_t *B_L, int8_t *B_U, uint64_t n, uint64_t k, uint8_t cs)
+static void induce_SA(const uint8_t *T, const uint32_t *TA_L, const int16_t *TA_U, uint32_t *SA_L, int16_t *SA_U,
+                      uint32_t *C_L, int16_t *C_U, uint32_t *B_L, int16_t *B_U, uint64_t n, uint64_t k, uint8_t cs)
 {
     int64_t j;
     int64_t c0;
     int64_t c1;
     uint32_t *b_L;
-    int8_t *b_U;
+    int16_t *b_U;
 
     // compute SA1
     if (C_L == B_L)
@@ -107,17 +107,17 @@ static void induce_SA(const uint8_t *T, const uint32_t *TA_L, const int8_t *TA_U
 
     j = n - 1;
     c1 = chr(j);
-    uint64_t value = flbwt::get_40bit_value(B_L, B_U, c1);
-    b_U = SA_U + value; 
+    uint64_t value = flbwt::get_48bit_value(B_L, B_U, c1);
+    b_U = SA_U + value;
     b_L = SA_L + value;
 
     int64_t result = ((0 < j) && (chr(j - 1) < (uint64_t)c1)) ? ~j : j;
-    flbwt::set_40bit_value(b_L++, b_U++, 0, result);
+    flbwt::set_48bit_value(b_L++, b_U++, 0, result);
 
     for (uint64_t i = 0; i < n; ++i)
     {
-        j = flbwt::get_40bit_value(SA_L, SA_U, i);
-        flbwt::set_40bit_value(SA_L, SA_U, i, ~j);
+        j = flbwt::get_48bit_value(SA_L, SA_U, i);
+        flbwt::set_48bit_value(SA_L, SA_U, i, ~j);
 
         if (0 < j)
         {
@@ -126,15 +126,15 @@ static void induce_SA(const uint8_t *T, const uint32_t *TA_L, const int8_t *TA_U
             c0 = chr(j);
             if (c0 != c1)
             {
-                flbwt::set_40bit_value(B_L, B_U, c1, b_L - SA_L);
+                flbwt::set_48bit_value(B_L, B_U, c1, b_L - SA_L);
                 c1 = c0;
-                value = flbwt::get_40bit_value(B_L, B_U, c1);
-                b_U = SA_U + value; 
+                value = flbwt::get_48bit_value(B_L, B_U, c1);
+                b_U = SA_U + value;
                 b_L = SA_L + value;
             }
 
             result = ((0 < j) && (chr(j - 1) < (uint64_t)c1)) ? ~j : j;
-            flbwt::set_40bit_value(b_L++, b_U++, 0, result);
+            flbwt::set_48bit_value(b_L++, b_U++, 0, result);
         }
     }
 
@@ -147,12 +147,12 @@ static void induce_SA(const uint8_t *T, const uint32_t *TA_L, const int8_t *TA_U
     get_buckets(C_L, C_U, B_L, B_U, k, true);
 
     c1 = 0;
-    value = flbwt::get_40bit_value(B_L, B_U, c1);
-    b_U = SA_U + value; 
+    value = flbwt::get_48bit_value(B_L, B_U, c1);
+    b_U = SA_U + value;
     b_L = SA_L + value;
     for (int64_t i = n - 1; 0 <= i; --i)
     {
-        j = flbwt::get_40bit_value(SA_L, SA_U, i);
+        j = flbwt::get_48bit_value(SA_L, SA_U, i);
 
         if (0 < j)
         {
@@ -160,34 +160,34 @@ static void induce_SA(const uint8_t *T, const uint32_t *TA_L, const int8_t *TA_U
             c0 = chr(j);
             if (c0 != c1)
             {
-                flbwt::set_40bit_value(B_L, B_U, c1, b_L - SA_L);
+                flbwt::set_48bit_value(B_L, B_U, c1, b_L - SA_L);
                 c1 = c0;
-                value = flbwt::get_40bit_value(B_L, B_U, c1);
-                b_U = SA_U + value; 
+                value = flbwt::get_48bit_value(B_L, B_U, c1);
+                b_U = SA_U + value;
                 b_L = SA_L + value;
             }
 
             result = ((j == 0) || (chr(j - 1) > (uint64_t)c1)) ? ~j : j;
             --b_L;
             --b_U;
-            flbwt::set_40bit_value(b_L, b_U, 0, result); 
+            flbwt::set_48bit_value(b_L, b_U, 0, result);
         }
         else
         {
-            flbwt::set_40bit_value(SA_L, SA_U, i, ~j);
+            flbwt::set_48bit_value(SA_L, SA_U, i, ~j);
         }
     }
 }
 
-void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t *SA_L,
-                       int8_t *SA_U, uint64_t fs, uint64_t n, uint64_t k, uint8_t cs)
+void flbwt::sais_48bit(const uint8_t *T, uint32_t *TA_L, int16_t *TA_U, uint32_t *SA_L,
+                       int16_t *SA_U, uint64_t fs, uint64_t n, uint64_t k, uint8_t cs)
 {
     uint32_t *C_L = NULL;
     uint32_t *B_L = NULL;
     uint32_t *RA_L = NULL;
-    int8_t *C_U = NULL;
-    int8_t *B_U = NULL;
-    int8_t *RA_U = NULL;
+    int16_t *C_U = NULL;
+    int16_t *B_U = NULL;
+    int16_t *RA_U = NULL;
     int64_t c;
     int64_t c0;
     int64_t c1;
@@ -211,7 +211,7 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
     else
     {
         C_L = B_L = new uint32_t[k];
-        C_U = B_U = new int8_t[k];
+        C_U = B_U = new int16_t[k];
     }
 
     get_counts(T, TA_L, TA_U, C_L, C_U, n, k, cs);
@@ -230,9 +230,9 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
         }
         else if (c != 0)
         {
-            int64_t index = flbwt::get_40bit_value(B_L, B_U, c1) - 1;
-            flbwt::set_40bit_value(B_L, B_U, c1, index);
-            flbwt::set_40bit_value(SA_L, SA_U, index, i + 1);
+            int64_t index = flbwt::get_48bit_value(B_L, B_U, c1) - 1;
+            flbwt::set_48bit_value(B_L, B_U, c1, index);
+            flbwt::set_48bit_value(SA_L, SA_U, index, i + 1);
             c = 0;
         }
 
@@ -246,12 +246,12 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
         delete[] C_L;
         delete[] C_U;
     }
-    
+
     // compact all the sorted substrings into the first m items of SA
     m = 0;
     for (uint64_t i = 0; i < n; ++i)
     {
-        p = flbwt::get_40bit_value(SA_L, SA_U, i);
+        p = flbwt::get_48bit_value(SA_L, SA_U, i);
 
         if (0 < p)
         {
@@ -268,7 +268,7 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
                 }
 
                 if ((j < (int64_t)n) && (c0 < c1))
-                    flbwt::set_40bit_value(SA_L, SA_U, m++, p);
+                    flbwt::set_48bit_value(SA_L, SA_U, m++, p);
             }
         }
     }
@@ -291,7 +291,7 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
         }
         else if (c != 0)
         {
-            flbwt::set_40bit_value(SA_L, SA_U, m + ((i + 1) >> 1), j - i - 1);
+            flbwt::set_48bit_value(SA_L, SA_U, m + ((i + 1) >> 1), j - i - 1);
             j = i + 1;
             c = 0;
         }
@@ -303,9 +303,9 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
     qlen = 0;
     for (int64_t i = 0; i < m; ++i)
     {
-        p = flbwt::get_40bit_value(SA_L, SA_U, i);
+        p = flbwt::get_48bit_value(SA_L, SA_U, i);
         int64_t index = m + (p >> 1);
-        plen = flbwt::get_40bit_value(SA_L, SA_U, index);
+        plen = flbwt::get_48bit_value(SA_L, SA_U, index);
         diff = 1;
 
         if (plen == qlen)
@@ -327,7 +327,7 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
             qlen = plen;
         }
 
-        flbwt::set_40bit_value(SA_L, SA_U, index, name);
+        flbwt::set_48bit_value(SA_L, SA_U, index, name);
     }
 
     // STAGE 2: Solve the reduced problem. Recurse if names are not yet unique
@@ -339,12 +339,12 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
         {
             if (SA_L[i] != 0 || SA_U[i] != 0)
             {
-                int64_t value = flbwt::get_40bit_value(SA_L, SA_U, i) - 1;
-                flbwt::set_40bit_value(RA_L, RA_U, j--, value);
+                int64_t value = flbwt::get_48bit_value(SA_L, SA_U, i) - 1;
+                flbwt::set_48bit_value(RA_L, RA_U, j--, value);
             }
         }
 
-        flbwt::sais_40bit(NULL, RA_L, RA_U, SA_L, SA_U, fs + n - m * 2, m, name, 40);
+        flbwt::sais_48bit(NULL, RA_L, RA_U, SA_L, SA_U, fs + n - m * 2, m, name, 48);
 
         for (int64_t i = n - 2, j = m - 1, c = 0, c1 = chr(n - 1); 0 <= i; --i, c1 = c0)
         {
@@ -356,16 +356,16 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
             }
             else if (c != 0)
             {
-                flbwt::set_40bit_value(RA_L, RA_U, j--, i + 1);
+                flbwt::set_48bit_value(RA_L, RA_U, j--, i + 1);
                 c = 0;
             }
         }
 
         for (int64_t i = 0; i < m; ++i)
         {
-            int64_t index = flbwt::get_40bit_value(SA_L, SA_U, i);
-            int64_t value = flbwt::get_40bit_value(RA_L, RA_U, index);
-            flbwt::set_40bit_value(SA_L, SA_U, i, value);
+            int64_t index = flbwt::get_48bit_value(SA_L, SA_U, i);
+            int64_t value = flbwt::get_48bit_value(RA_L, RA_U, index);
+            flbwt::set_48bit_value(SA_L, SA_U, i, value);
         }
     }
 
@@ -380,7 +380,7 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
     else
     {
         C_L = B_L = new uint32_t[k];
-        C_U = B_U = new int8_t[k];
+        C_U = B_U = new int16_t[k];
     }
 
     // put all LMS characters into their buckets
@@ -392,12 +392,12 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
 
     for (int64_t i = m - 1; 0 <= i; --i)
     {
-        j = flbwt::get_40bit_value(SA_L, SA_U, i);
+        j = flbwt::get_48bit_value(SA_L, SA_U, i);
         SA_L[i] = SA_U[i] = 0;
         int64_t index1 = chr(j);
-        uint64_t index2 = flbwt::get_40bit_value(B_L, B_U, index1) - 1;
-        flbwt::set_40bit_value(B_L, B_U, index1, index2);
-        flbwt::set_40bit_value(SA_L, SA_U, index2, j);
+        uint64_t index2 = flbwt::get_48bit_value(B_L, B_U, index1) - 1;
+        flbwt::set_48bit_value(B_L, B_U, index1, index2);
+        flbwt::set_48bit_value(SA_L, SA_U, index2, j);
     }
 
     induce_SA(T, TA_L, TA_U, SA_L, SA_U, C_L, C_U, B_L, B_U, n, k, cs);
