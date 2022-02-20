@@ -1,14 +1,16 @@
 #include <algorithm>
 #include <iostream>
-#include <time.h>
+// #include <time.h>
 #include <stdlib.h>
 #include "flbwt.hpp"
 #include "utility.hpp"
 #include "induce40bit.hpp"
 #include "induce48bit.hpp"
+#include "induce64bit.hpp"
 #include "sais32bit.hpp"
 #include "sais40bit.hpp"
 #include "sais48bit.hpp"
+#include "sais64bit.hpp"
 
 /**
  * @brief Algorithm 1 from the research paper (simplified version).
@@ -50,10 +52,10 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
     T[n] = '\0';
 
     // Construct the bwt for input string
-    clock_t begin = clock();
+    // clock_t begin = clock();
     flbwt::BWT_result *B = flbwt::bwt_string(T, n, true);
-    clock_t end = clock();
-    std::cout << "Running time: " << ((double)(end - begin) / CLOCKS_PER_SEC) << std::endl;
+    // clock_t end = clock();
+    // std::cout << "Running time: " << ((double)(end - begin) / CLOCKS_PER_SEC) << std::endl;
 
     // Write the bwt to the output file */
     fp = fopen(output_filename, "wb");
@@ -118,13 +120,13 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     // Decompose the input string into S* substrings
     flbwt::Container *container = flbwt::extract_LMS_strings(T, n);
 
-    // sort the S*substrings and name them
+    // Sort the S*substrings and name them
     uint8_t **S = flbwt::sort_LMS_strings(T, container);
 
-    // get new shortened string T1
+    // Get new shortened string T1
     flbwt::PackedArray *T1 = flbwt::create_shortened_string(T, n, container);
 
-    // release T if user allows it --> lower memory usage
+    // Release T if user allows it --> lower memory usage
     if (free_T)
     {
         free(T);
@@ -137,6 +139,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     int16_t *SA_16bit = NULL;
     int32_t *SA_32bit = NULL;
     uint32_t *SA_u32bit = NULL;
+    int64_t *SA_64bit = NULL;
 
     uint64_t total_substring_count = container->num_of_substrings + 2;
     uint64_t max_value = container->sa_max_value;
@@ -177,7 +180,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
         free(S);
         delete T1;
 
-        // create BWT for the original input string T (SA_32bit is deleted in this function)
+        // Create BWT for the original input string T (SA_32bit is deleted in this function)
         BWT = flbwt::induce_bwt_32bit(SA_32bit, container);
     }
     else if (bits < 40U)
@@ -208,7 +211,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
         free(S);
         delete T1;
 
-        // create BWT for the original input string T (SA_u32bit and SA_8bit are deleted in this function)
+        // Create BWT for the original input string T (SA_u32bit and SA_8bit are deleted in this function)
         BWT = flbwt::induce_bwt_40bit(SA_u32bit, SA_8bit, container);
     }
     else if (bits < 48U)
@@ -239,7 +242,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
         free(S);
         delete T1;
 
-        // create BWT for the original input string T (SA_u32bit and SA_16bit are deleted in this function)
+        // Create BWT for the original input string T (SA_u32bit and SA_16bit are deleted in this function)
         BWT = flbwt::induce_bwt_48bit(SA_u32bit, SA_16bit, container);
     }
     else if (bits < 56U)
@@ -248,7 +251,30 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     }
     else if (bits < 64)
     { // SA can be stored into array of 64 bit integers
-        throw new std::runtime_error("SUPPORT FOR 2^56+ BIT FILES NOT IMPLEMENTED YET!");
+
+        // Compute SA
+        SA_64bit = new int64_t[total_substring_count];
+        flbwt::sais_64bit((uint8_t *)T1->get_raw_arr_pointer(), SA_64bit, 0, T1_length, k, T1->get_integer_bits());
+
+        // Compute BWT for shortened string
+        for (uint64_t i = 0; i < container->num_of_substrings + 1; ++i)
+            ++SA_64bit[i];
+
+        for (uint64_t i = 0; i < container->num_of_substrings + 1; i++)
+        {
+            p = SA_64bit[i];
+            q = S[T1->get_value(p - 1)];
+            l = container->hashtable->get_length(q);
+            uint64_t value = container->hashtable->get_first_character_pointer(q) + l - 1 - container->bwp_base;
+            SA_64bit[i] = value;
+        }
+
+        // Release resources that are no longer needed
+        free(S);
+        delete T1;
+
+        // Create BWT for the original input string T (SA_32bit is deleted in this function)
+        BWT = flbwt::induce_bwt_64bit(SA_64bit, container);
     }
 
     delete container;
