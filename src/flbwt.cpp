@@ -6,10 +6,12 @@
 #include "utility.hpp"
 #include "induce40bit.hpp"
 #include "induce48bit.hpp"
+#include "induce56bit.hpp"
 #include "induce64bit.hpp"
 #include "sais32bit.hpp"
 #include "sais40bit.hpp"
 #include "sais48bit.hpp"
+#include "sais56bit.hpp"
 #include "sais64bit.hpp"
 
 /**
@@ -137,6 +139,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     // Arrays of different sizes are used to store the SA
     int8_t *SA_8bit = NULL;
     int16_t *SA_16bit = NULL;
+    uint16_t *SA_u16bit = NULL;
     int32_t *SA_32bit = NULL;
     uint32_t *SA_u32bit = NULL;
     int64_t *SA_64bit = NULL;
@@ -247,7 +250,35 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     }
     else if (bits < 56U)
     { // SA can be stored into three integer arrays (32 + 16 + 8bits)
-        throw new std::runtime_error("SUPPORT FOR 2^48+ BIT FILES NOT IMPLEMENTED YET!");
+
+        // Compute SA
+        SA_u32bit = new uint32_t[total_substring_count]; // first 32 bits
+        SA_u16bit = new uint16_t[total_substring_count]; // 16 middle bits
+        SA_8bit = new int8_t[total_substring_count];     // 8 most significant bits
+        flbwt::sais_56bit((uint8_t *)T1->get_raw_arr_pointer(), NULL, NULL, NULL, SA_u32bit, SA_u16bit, SA_8bit, 0, T1_length, k, T1->get_integer_bits());
+
+        // Compute BWT for shortened string
+        for (uint64_t i = 0; i < container->num_of_substrings + 1; ++i)
+        {
+            int64_t tmp = flbwt::get_56bit_value(SA_u32bit, SA_u16bit, SA_8bit, i);
+            flbwt::set_56bit_value(SA_u32bit, SA_u16bit, SA_8bit, i, tmp + 1);
+        }
+
+        for (uint64_t i = 0; i < container->num_of_substrings + 1; i++)
+        {
+            p = flbwt::get_56bit_value(SA_u32bit, SA_u16bit, SA_8bit, i);
+            q = S[T1->get_value(p - 1)];
+            l = container->hashtable->get_length(q);
+            uint64_t value = container->hashtable->get_first_character_pointer(q) + l - 1 - container->bwp_base;
+            flbwt::set_56bit_value(SA_u32bit, SA_u16bit, SA_8bit, i, value);
+        }
+
+        // Release resources that are no longer needed
+        free(S);
+        delete T1;
+
+        // Create BWT for the original input string T (SA_u32bit, SA_u16bit and SA_8bit are deleted in this function)
+        BWT = flbwt::induce_bwt_56bit(SA_u32bit, SA_u16bit, SA_8bit, container);
     }
     else if (bits < 64)
     { // SA can be stored into array of 64 bit integers
