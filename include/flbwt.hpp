@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "container.hpp"
 #include "packed_array.hpp"
-#include "induce.hpp"
+#include "induce32bit.hpp"
 
 namespace flbwt
 {

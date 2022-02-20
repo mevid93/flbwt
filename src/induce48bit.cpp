@@ -1,5 +1,6 @@
 #include <iostream>
-#include "induce.hpp"
+#include "induce48bit.hpp"
+#include "sais48bit.hpp"
 #include "queue.hpp"
 
 #ifndef TYPE_S
@@ -8,7 +9,7 @@
 #define TYPE_LMS 2
 #endif
 
-flbwt::BWT_result *flbwt::induce_bwt(flbwt::PackedArray *SA, flbwt::Container *container)
+flbwt::BWT_result *flbwt::induce_bwt_48bit(uint32_t *SA_L, int16_t *SA_U, flbwt::Container *container)
 {
     uint8_t bwp_w = container->bwp_width;
     uint8_t *bwp_base = container->bwp_base;
@@ -30,7 +31,7 @@ flbwt::BWT_result *flbwt::induce_bwt(flbwt::PackedArray *SA, flbwt::Container *c
 
     for (i = container->num_of_substrings; i >= 0; i--)
     {
-        q = SA->get_value(i) + bwp_base;
+        q = flbwt::get_48bit_value(SA_L, SA_U, i) + bwp_base;
 
         if (i == 0)
         {
@@ -45,11 +46,11 @@ flbwt::BWT_result *flbwt::induce_bwt(flbwt::PackedArray *SA, flbwt::Container *c
     }
 
     // delete SA --> big performance boost (extra heap becomes available for next allocation)
-    delete SA;
+    delete[] SA_L;
+    delete[] SA_U;
 
     // allocate memory for bwt
     uint8_t *BWT = new uint8_t[container->n + 1];
-    std::fill_n(BWT, container->n + 1, 0);
 
     int64_t cc = 0;
     for (i = 0; i <= 256 + 1; i++)
