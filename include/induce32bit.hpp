@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "container.hpp"
+#include "utility.hpp"
 
 namespace flbwt
 {

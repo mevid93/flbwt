@@ -26,6 +26,8 @@ flbwt::Queue::~Queue()
         delete qb->b;
         free(qb);
 
+        flbwt::decrease_memory_allocation(sizeof(flbwt::PackedArray) + sizeof(flbwt::qblock));
+
         qb = q;
     }
 }
@@ -38,6 +40,8 @@ void flbwt::Queue::enqueue(uint64_t x)
     { // current block is full
         qb = (qblock *)malloc(sizeof(qblock));
         qb->b = new PackedArray(QSIZ, this->w);
+
+        flbwt::increase_memory_allocation(sizeof(flbwt::PackedArray) + sizeof(flbwt::qblock));
 
         if (this->eb == NULL)
         { // no blocks
@@ -68,6 +72,8 @@ void flbwt::Queue::enqueue_l(uint64_t x)
     { // current block is full
         qb = (qblock *)malloc(sizeof(qblock));
         qb->b = new PackedArray(QSIZ, this->w);
+
+        flbwt::increase_memory_allocation(sizeof(flbwt::PackedArray) + sizeof(flbwt::qblock));
 
         if (this->sb == NULL)
         { // no block exists
@@ -102,6 +108,8 @@ int64_t flbwt::Queue::dequeue()
         this->sb = qb->next;
         delete qb->b;
         free(qb);
+
+        flbwt::decrease_memory_allocation(sizeof(flbwt::PackedArray) + sizeof(flbwt::qblock));
 
         if (this->sb == NULL)
         { // the block is gone

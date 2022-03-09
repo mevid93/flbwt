@@ -178,6 +178,7 @@ void flbwt::sais_32bit(const uint8_t *T, int32_t *SA, uint64_t fs, uint64_t n, u
     else
     {
         C = B = new int32_t[k];
+        flbwt::increase_memory_allocation(k*4);
     }
 
     get_counts(T, C, n, k, cs);
@@ -206,7 +207,10 @@ void flbwt::sais_32bit(const uint8_t *T, int32_t *SA, uint64_t fs, uint64_t n, u
     induce_SA(T, SA, C, B, n, k, cs);
 
     if (fs < k)
+    {
         delete[] C;    
+        flbwt::decrease_memory_allocation(k*4);
+    }
 
     // compact all the sorted substrings into the first m items of SA
     m = 0;
@@ -330,6 +334,7 @@ void flbwt::sais_32bit(const uint8_t *T, int32_t *SA, uint64_t fs, uint64_t n, u
     else
     {
         C = B = new int32_t[k];
+        flbwt::increase_memory_allocation(k*4);
     }
 
     // put all LMS characters into their buckets
@@ -349,5 +354,8 @@ void flbwt::sais_32bit(const uint8_t *T, int32_t *SA, uint64_t fs, uint64_t n, u
     induce_SA(T, SA, C, B, n, k, cs);
 
     if (fs < k)
+    {
+        flbwt::decrease_memory_allocation(k*4);
         delete[] C;
+    }
 }

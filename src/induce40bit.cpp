@@ -24,6 +24,7 @@ flbwt::BWT_result *flbwt::induce_bwt_40bit(uint32_t *SA_L, int8_t *SA_U, flbwt::
         Q[TYPE_L][i] = new flbwt::Queue(bwp_w);
         Q[TYPE_S][i] = new flbwt::Queue(bwp_w);
     }
+    flbwt::increase_memory_allocation(3*258*sizeof(flbwt::Queue));
 
     int64_t i;
     int64_t c;
@@ -48,9 +49,11 @@ flbwt::BWT_result *flbwt::induce_bwt_40bit(uint32_t *SA_L, int8_t *SA_U, flbwt::
     // delete SA --> big performance boost (extra heap becomes available for next allocation)
     delete[] SA_L;
     delete[] SA_U;
+    flbwt::decrease_memory_allocation((container->num_of_substrings + 2) * 5);
 
     // allocate memory for bwt
     uint8_t *BWT = new uint8_t[container->n + 1];
+    flbwt::increase_memory_allocation(container->n + 1);
 
     int64_t cc = 0;
     for (i = 0; i <= 256 + 1; i++)
@@ -130,6 +133,8 @@ flbwt::BWT_result *flbwt::induce_bwt_40bit(uint32_t *SA_L, int8_t *SA_U, flbwt::
         delete Q[TYPE_L][c];
     }
 
+    flbwt::decrease_memory_allocation(258*sizeof(flbwt::Queue));
+
     for (c = 0; c <= 256 + 1; c++)
         Q[TYPE_L][c] = new flbwt::Queue(bwp_w);
 
@@ -171,10 +176,14 @@ flbwt::BWT_result *flbwt::induce_bwt_40bit(uint32_t *SA_L, int8_t *SA_U, flbwt::
         delete Q[TYPE_S][i];
     }
 
+    flbwt::decrease_memory_allocation(2*258*sizeof(flbwt::Queue));
+    
     // return the result bwt
     BWT_result *bwt_result = (BWT_result *)malloc(sizeof(BWT_result));
     bwt_result->last = last;
     bwt_result->BWT = BWT;
+
+    flbwt::increase_memory_allocation(sizeof(flbwt::BWT_result));
 
     return bwt_result;
 }

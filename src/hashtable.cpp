@@ -9,6 +9,7 @@ flbwt::HashTable::HashTable(const uint64_t hash_table_size, const uint64_t n)
     this->HBSIZE = 512;
     this->rest = new uint64_t[this->HTSIZE];
     this->head = new uint64_t[this->HTSIZE];
+    flbwt::increase_memory_allocation(8*2*this->HTSIZE);
     std::fill_n(this->rest, this->HTSIZE, 0);
     std::fill_n(this->head, this->HTSIZE, 0);
     this->buf = NULL;
@@ -88,6 +89,7 @@ uint8_t flbwt::HashTable::insert_string(const uint64_t m, uint8_t *p)
     if ((int64_t)space_required >= (int64_t)this->rest[h] - 12)
     {
         r2 = (uint8_t *)realloc(this->buf, this->bufsize + this->HBSIZE + space_required);
+        flbwt::increase_memory_allocation(this->HBSIZE + space_required);
 
         if (r2 != this->buf)
             this->buf = r2;
@@ -343,10 +345,12 @@ uint64_t flbwt::HashTable::find_name(uint64_t m, uint8_t *p)
 
 flbwt::HashTable::~HashTable()
 {
+    flbwt::decrease_memory_allocation(this->HTSIZE*8*2);
     delete[] this->rest;
     this->rest = NULL;
     delete[] this->head;
     this->head = NULL;
+    flbwt::decrease_memory_allocation(this->bufsize);
     if (this->buf != NULL)
         free(this->buf);
     this->buf = NULL;

@@ -12,6 +12,7 @@ flbwt::PackedArray::PackedArray(uint64_t length, uint8_t integer_bits)
     uint64_t bits_required = length * this->integer_bits;
     uint64_t arr_length = bits_required / 64 + 1;
     this->arr = (uint64_t *)malloc(arr_length * sizeof(uint64_t));
+    flbwt::increase_memory_allocation(8*arr_length);
     this->arr_length = arr_length;
 }
 
@@ -87,5 +88,6 @@ uint64_t *flbwt::PackedArray::get_raw_arr_pointer()
 
 flbwt::PackedArray::~PackedArray()
 {
+    flbwt::decrease_memory_allocation(8*this->arr_length);
     free(this->arr);
 }

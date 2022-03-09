@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <iostream>
-// #include <time.h>
+#include <time.h>
 #include <stdlib.h>
 #include "flbwt.hpp"
 #include "utility.hpp"
@@ -39,6 +39,7 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
     rewind(fp);
 
     T = (uint8_t *)malloc((n + 1) * sizeof(uint8_t));
+    flbwt::increase_memory_allocation(n + 1);
 
     if (!T)
     {
@@ -54,10 +55,11 @@ void flbwt::bwt_file(const char *input_filename, const char *output_filename)
     T[n] = '\0';
 
     // Construct the bwt for input string
-    // clock_t begin = clock();
+    clock_t begin = clock();
     flbwt::BWT_result *B = flbwt::bwt_string(T, n, true);
-    // clock_t end = clock();
-    // std::cout << "Running time: " << ((double)(end - begin) / CLOCKS_PER_SEC) << std::endl;
+    clock_t end = clock();
+    std::cout << "Running time: " << ((double)(end - begin) / CLOCKS_PER_SEC) << std::endl;
+    std::cout << "Max memory usage: " << flbwt::MAX_MEM_USE << " bytes" << std::endl;
 
     // Write the bwt to the output file */
     fp = fopen(output_filename, "wb");
@@ -131,6 +133,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
     // Release T if user allows it --> lower memory usage
     if (free_T)
     {
+        flbwt::decrease_memory_allocation(n);
         free(T);
         T = NULL;
     }
@@ -164,6 +167,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 
         // Compute SA
         SA_32bit = new int32_t[total_substring_count];
+        flbwt::increase_memory_allocation(4*total_substring_count);
         flbwt::sais_32bit((uint8_t *)T1->get_raw_arr_pointer(), SA_32bit, 0, T1_length, k, T1->get_integer_bits());
 
         // Compute BWT for shortened string
@@ -180,7 +184,9 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
         }
 
         // Release resources that are no longer needed
+        flbwt::decrease_memory_allocation(container->num_of_unique_substrings + 2);
         free(S);
+        flbwt::decrease_memory_allocation(sizeof(T1));
         delete T1;
 
         // Create BWT for the original input string T (SA_32bit is deleted in this function)
@@ -191,6 +197,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 
         // Compute SA
         SA_u32bit = new uint32_t[total_substring_count]; // first 32 bits
+        flbwt::increase_memory_allocation(5*total_substring_count);
         SA_8bit = new int8_t[total_substring_count];     // 8 most significant bits
         flbwt::sais_40bit((uint8_t *)T1->get_raw_arr_pointer(), NULL, NULL, SA_u32bit, SA_8bit, 0, T1_length, k, T1->get_integer_bits());
 
@@ -211,7 +218,9 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
         }
 
         // Release resources that are no longer needed
+        flbwt::decrease_memory_allocation(container->num_of_unique_substrings + 2);
         free(S);
+        flbwt::decrease_memory_allocation(sizeof(T1));
         delete T1;
 
         // Create BWT for the original input string T (SA_u32bit and SA_8bit are deleted in this function)
@@ -222,6 +231,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 
         // Compute SA
         SA_u32bit = new uint32_t[total_substring_count]; // first 32 bits
+        flbwt::increase_memory_allocation(6*total_substring_count);
         SA_16bit = new int16_t[total_substring_count];   // 16 most significant bits
         flbwt::sais_48bit((uint8_t *)T1->get_raw_arr_pointer(), NULL, NULL, SA_u32bit, SA_16bit, 0, T1_length, k, T1->get_integer_bits());
 
@@ -242,7 +252,9 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
         }
 
         // Release resources that are no longer needed
+        flbwt::decrease_memory_allocation(container->num_of_unique_substrings + 2);
         free(S);
+        flbwt::decrease_memory_allocation(sizeof(T1));
         delete T1;
 
         // Create BWT for the original input string T (SA_u32bit and SA_16bit are deleted in this function)
@@ -254,6 +266,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
         // Compute SA
         SA_u32bit = new uint32_t[total_substring_count]; // first 32 bits
         SA_u16bit = new uint16_t[total_substring_count]; // 16 middle bits
+        flbwt::increase_memory_allocation(7*total_substring_count);
         SA_8bit = new int8_t[total_substring_count];     // 8 most significant bits
         flbwt::sais_56bit((uint8_t *)T1->get_raw_arr_pointer(), NULL, NULL, NULL, SA_u32bit, SA_u16bit, SA_8bit, 0, T1_length, k, T1->get_integer_bits());
 
@@ -274,7 +287,9 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
         }
 
         // Release resources that are no longer needed
+        flbwt::decrease_memory_allocation(container->num_of_unique_substrings + 2);
         free(S);
+        flbwt::decrease_memory_allocation(sizeof(T1));
         delete T1;
 
         // Create BWT for the original input string T (SA_u32bit, SA_u16bit and SA_8bit are deleted in this function)
@@ -285,6 +300,7 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
 
         // Compute SA
         SA_64bit = new int64_t[total_substring_count];
+        flbwt::increase_memory_allocation(8*total_substring_count);
         flbwt::sais_64bit((uint8_t *)T1->get_raw_arr_pointer(), SA_64bit, 0, T1_length, k, T1->get_integer_bits());
 
         // Compute BWT for shortened string
@@ -301,7 +317,9 @@ flbwt::BWT_result *bwt_is(uint8_t *T, const uint64_t n, bool free_T)
         }
 
         // Release resources that are no longer needed
+        flbwt::decrease_memory_allocation(container->num_of_unique_substrings + 2);
         free(S);
+        flbwt::decrease_memory_allocation(sizeof(T1));
         delete T1;
 
         // Create BWT for the original input string T (SA_32bit is deleted in this function)
@@ -319,6 +337,7 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
 {
     // Initialize the result data structure
     flbwt::Container *container = new Container(n);
+    flbwt::increase_memory_allocation(sizeof(container));
 
     // If T is trivial, then return the result immediately
     if (n <= 2)
@@ -326,6 +345,7 @@ flbwt::Container *flbwt::extract_LMS_strings(uint8_t *T, const uint64_t n)
 
     // Initialize hash table where unique substrings are stored
     container->hashtable = new HashTable(67777, n);
+    flbwt::increase_memory_allocation(sizeof(container->hashtable));
 
     // The first S* substring is at location T[n] but it is ignored here.
     // The next to last character is always of TYPE_L.
@@ -382,6 +402,7 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
 {
     // array s will hold hashtable positions of sorted S* substrings
     uint8_t **s = (uint8_t **)malloc((container->num_of_unique_substrings + 2) * sizeof(uint8_t *));
+    flbwt::increase_memory_allocation(container->num_of_unique_substrings + 2);
 
     uint64_t p, i, j, l, m;
     uint8_t *r, *q;
@@ -392,6 +413,7 @@ uint8_t **flbwt::sort_LMS_strings(uint8_t *T, flbwt::Container *container)
     uint64_t space_required = 1 + 1 + container->hashtable->calculate_lenlen(p + 1) + (p + 1) + container->hashtable->NAME_BYTES;
     space_required += 1 + 1 + 1 + 1 + container->hashtable->NAME_BYTES;
     r = (uint8_t *)realloc(container->hashtable->buf, container->hashtable->bufsize + space_required);
+    flbwt::increase_memory_allocation(space_required);
     if (r != container->hashtable->buf)
         container->hashtable->buf = r;
     container->hashtable->bufsize += space_required;
@@ -516,6 +538,7 @@ flbwt::PackedArray *flbwt::create_shortened_string(uint8_t *T, const uint64_t n,
     uint8_t bits = flbwt::position_of_msb(max_name);
     // number of bits required to store a name
     PackedArray *T1 = new PackedArray(total_substring_count, bits);
+    flbwt::increase_memory_allocation(sizeof(T1));
 
     int previous_type = TYPE_L; // type of the previous character
     uint64_t p;                 // starting position of S* substring
