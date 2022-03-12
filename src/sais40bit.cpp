@@ -48,16 +48,15 @@ static void get_counts(const uint8_t *T, const uint32_t *TA_L, const int8_t *TA_
     for (uint64_t i = 0; i < n; ++i)
     {
         uint64_t index = chr(i);
-        uint64_t value = ((uint64_t)C_U[index] << 32 | C_L[index]) + 1;
-        C_U[index] = value >> 32;
-        C_L[index] = value & 0xffffffff;
+        int64_t value = flbwt::get_40bit_value(C_L, C_U, index) + 1;
+        flbwt::set_40bit_value(C_L, C_U, index, value);
     }
 }
 
 /**
  * @brief Find the start or end of each bucket.
  */
-static void get_buckets(const uint32_t *C_L, const int8_t *C_U, uint32_t *B_L, int8_t *B_U, uint64_t k, bool end)
+static void get_buckets(uint32_t *C_L, int8_t *C_U, uint32_t *B_L, int8_t *B_U, uint64_t k, bool end)
 {
     uint64_t sum = 0;
 
@@ -65,22 +64,20 @@ static void get_buckets(const uint32_t *C_L, const int8_t *C_U, uint32_t *B_L, i
     {
         for (uint64_t i = 0; i < k; ++i)
         {
-            sum += ((uint64_t)C_U[i] << 32 | C_L[i]);
-            B_U[i] = sum >> 32;
-            B_L[i] = sum & 0xffffffff;
+            sum += flbwt::get_40bit_value(C_L, C_U, i);
+            flbwt::set_40bit_value(B_L, B_U, i, sum);
         }
     }
     else
     {
-        uint64_t value;
-        uint64_t sub;
+        int64_t value;
+        int64_t sub;
         for (uint64_t i = 0; i < k; ++i)
         {
-            value = ((uint64_t)C_U[i] << 32 | C_L[i]);
+            value = flbwt::get_40bit_value(C_L, C_U, i);
             sub = sum;
             sum += value;
-            B_U[i] = sub >> 32;
-            B_L[i] = sub & 0xffffffff;
+            flbwt::set_40bit_value(B_L, B_U, i, sub);
         }
     }
 }
@@ -273,7 +270,7 @@ void flbwt::sais_40bit(const uint8_t *T, uint32_t *TA_L, int8_t *TA_U, uint32_t 
         }
     }
 
-    // // int the name array buffer
+    // int the name array buffer
     for (uint64_t i = m; i < n; ++i)
         SA_L[i] = SA_U[i] = 0;
 
